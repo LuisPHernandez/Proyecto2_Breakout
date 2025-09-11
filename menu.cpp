@@ -5,10 +5,10 @@
 #include <cstdlib>
 
 // Estados
-enum class Screen { MAIN_MENU, INSTRUCTIONS, HIGHSCORES, GAMEPLAY, EXIT }
+enum class Screen { MAIN_MENU, INSTRUCTIONS, HIGHSCORES, GAMEPLAY, EXIT };
 
 // Utilidades de dibujo
-void drawFrame(int top, int left, int bottom, int right, const std::string& title = "") {
+void drawFrame(int top, int left, int bottom, int right, const std::string& title = "") { 
     // Marco rectangular
     for (int x = left; x <= right; ++x) {
         mvaddch(top, x, '=');
@@ -23,14 +23,14 @@ void drawFrame(int top, int left, int bottom, int right, const std::string& titl
 
     if (!title.empty()) {
         int w = right - left - 1;
-        int L = (int)title.size()
+        int L = (int)title.size(); // CORREGIDO: Faltaba el punto y coma
         int tx = left + ((w - L) / 2) + 1;
         mvprintw(top, tx, "%s", title.c_str());
     }
 }
 
 void centerPrint(int row, const std::string& s) {
-    int cols; int rows;
+    int cols, rows; // CORREGIDO: Separado en dos declaraciones
     getmaxyx(stdscr, rows, cols);
     int x = (cols - (int)s.size())/2;
     mvprintw(row, x, "%s", s.c_str());
@@ -149,9 +149,20 @@ void showInstructions() {
     // Se dibuja el marco y el título
     drawFrame(top, left, bottom, right, " INSTRUCCIONES ");
 
+    // CORREGIDO: Inicializar la variable y
+    int y = top + 2;
+    
     // Objetivo del juego
     centerPrint(y++, "Objetivo: Romper todos los ladrillos con la pelota,");
     centerPrint(y++, "sin dejar que esta caiga al fondo, para sumar puntos.");
+    y++;
+
+    // Controles
+    centerPrint(y++, "Mover paleta: ← / →  (A / D)");
+    centerPrint(y++, "Lanzar pelota: Espacio");
+    centerPrint(y++, "Pausa: P");
+    centerPrint(y++, "Reiniciar nivel: R");
+    centerPrint(y++, "Salir: Esc / Q");
     y++;
 
     // Elementos visuales
@@ -160,16 +171,8 @@ void showInstructions() {
     centerPrint(y++, "Pelota (o) que rebota y destruye ladrillos");
     centerPrint(y++, "Ladrillos (#, %, @) con diferentes resistencias");
     centerPrint(y++, "Bordes (| - +) que delimitan el area de juego");
-    y += 2;
-
-    // Controles
-    int y = top + 2;
-    centerPrint(y++, "Mover paleta: ← / →  (A / D)");
-    centerPrint(y++, "Lanzar pelota: Espacio");
-    centerPrint(y++, "Pausa: P");
-    centerPrint(y++, "Reiniciar nivel: R");
-    centerPrint(y++, "Salir: Esc / Q");
-    y += 2;
+    y++;
+    
     centerPrint(y++, "[ Enter / Esc para volver ]");
     refresh();
 
@@ -206,7 +209,7 @@ void showHighscores() {
 
     // Se imprimen los puntajes altos
     int y = top + 4;
-    for (auto& s : lines) centerPrint(y++, s);
+    for (const auto& s : lines) centerPrint(y++, s);
     centerPrint(bottom - 2, "[ Enter / Esc para volver ]");
     refresh();
 
@@ -275,8 +278,8 @@ void runGameplay() {
     centerPrint(top + (h/2) + 1, "Presiona Enter para volver al menu");
 
     // Se imprime la paleta y la pelota
-    centerPrint(bottom - 3, "o")
-    centerPrint(bottom - 2, "======")
+    centerPrint(bottom - 3, "o");
+    centerPrint(bottom - 2, "======");
 
     refresh();
 
