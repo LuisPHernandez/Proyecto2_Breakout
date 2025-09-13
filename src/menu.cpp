@@ -5,7 +5,7 @@
 #include <cstdlib>
 
 // Estados
-enum class Screen { MAIN_MENU, INSTRUCTIONS, HIGHSCORES, GAMEPLAY, EXIT }
+enum class Screen { MAIN_MENU, INSTRUCTIONS, HIGHSCORES, GAMEPLAY, EXIT };
 
 // Utilidades de dibujo
 void drawFrame(int top, int left, int bottom, int right, const std::string& title = "") {
@@ -23,7 +23,7 @@ void drawFrame(int top, int left, int bottom, int right, const std::string& titl
 
     if (!title.empty()) {
         int w = right - left - 1;
-        int L = (int)title.size()
+        int L = (int)title.size();
         int tx = left + ((w - L) / 2) + 1;
         mvprintw(top, tx, "%s", title.c_str());
     }
@@ -102,7 +102,7 @@ Screen showMainMenu() {
 
         // Se loopea por todos los elementos del menú
         for (int i = 0; i < (int)items.size(); ++i) {
-            std::string line = (i == selected ? ">> " : "   ") + items[i] + (i == selected ? " <<" : "");
+            std::string line = (i == selected ? ">> " : "") + items[i] + (i == selected ? " <<" : "");
             int y = top + 4 + i*2;
 
             // ncurses activa el atributo de brillo/colores invertidos para resaltar la opción seleccionada
@@ -111,7 +111,7 @@ Screen showMainMenu() {
             centerPrint(y, line);
             if (i == selected) attroff(A_REVERSE);
         }
-        centerPrint(bottom - 2, "Usa ↑/↓ (o W/S)  Enter=Seleccionar  Esc=Salir");
+        centerPrint(bottom - 2, "Usa flechas (o W/S)  Enter = Seleccionar  Esc = Salir");
 
         // Refresca la pantalla (Se dibuja en la terminal todo lo acumulado en el buffer)
         refresh();
@@ -144,10 +144,11 @@ void showInstructions() {
     int rows, cols; getmaxyx(stdscr, rows, cols);
 
     // Se calcula un rectangulo centrado para dibujar el marco de la aplicación
-    int top = rows/2 - 8, left = cols/2 - 35, bottom = rows/2 + 8, right = cols/2 + 35;
+    int top = rows/2 - 10, left = cols/2 - 35, bottom = rows/2 + 10, right = cols/2 + 35;
 
     // Se dibuja el marco y el título
     drawFrame(top, left, bottom, right, " INSTRUCCIONES ");
+    int y = top + 2;
 
     // Objetivo del juego
     centerPrint(y++, "Objetivo: Romper todos los ladrillos con la pelota,");
@@ -160,11 +161,10 @@ void showInstructions() {
     centerPrint(y++, "Pelota (o) que rebota y destruye ladrillos");
     centerPrint(y++, "Ladrillos (#, %, @) con diferentes resistencias");
     centerPrint(y++, "Bordes (| - +) que delimitan el area de juego");
-    y += 2;
+    y ++;
 
     // Controles
-    int y = top + 2;
-    centerPrint(y++, "Mover paleta: ← / →  (A / D)");
+    centerPrint(y++, "Mover paleta: Flechas (A / D)");
     centerPrint(y++, "Lanzar pelota: Espacio");
     centerPrint(y++, "Pausa: P");
     centerPrint(y++, "Reiniciar nivel: R");
@@ -189,7 +189,7 @@ void showHighscores() {
     int rows, cols; getmaxyx(stdscr, rows, cols);
 
     // Se calcula un rectangulo centrado para dibujar el marco de la aplicación
-    int top = rows/2 - 8, left = cols/2 - 35, bottom = rows/2 + 8, right = cols/2 + 35;
+    int top = rows/2 - 9, left = cols/2 - 35, bottom = rows/2 + 9, right = cols/2 + 35;
 
     // Se dibuja el marco y el título
     drawFrame(top, left, bottom, right, " HIGHSCORES ");
@@ -249,7 +249,7 @@ void runGameplay() {
     int remainder = (w - totalGaps) - (brickW * BRICK_COLS);    // Columnas sobrantes por redondeo
 
     // Punto de partida de dibujo
-    int startY = y0 + 2;
+    int startY = y0 + 1;
 
     // Dibujo del grid de ladrillos
     for (int r = 0; r < BRICK_ROWS; ++r) {
@@ -271,12 +271,12 @@ void runGameplay() {
     }
 
     // Se imprime mensaje informativo (nivel no funcional)
-    centerPrint(top + (h/2), "Cargando nivel...");
-    centerPrint(top + (h/2) + 1, "Presiona Enter para volver al menu");
+    centerPrint(top + (h/2) + 4, "Nivel en construccion...");
+    centerPrint(top + (h/2) + 5, "Presiona Enter para volver al menu");
 
     // Se imprime la paleta y la pelota
-    centerPrint(bottom - 3, "o")
-    centerPrint(bottom - 2, "======")
+    centerPrint(bottom - 3, "o");
+    centerPrint(bottom - 2, "=======");
 
     refresh();
 
