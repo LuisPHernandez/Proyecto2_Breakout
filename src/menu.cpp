@@ -8,7 +8,7 @@
 enum class Screen { MAIN_MENU, INSTRUCTIONS, HIGHSCORES, GAMEPLAY, EXIT };
 
 // Utilidades de dibujo
-void drawFrame(int top, int left, int bottom, int right, const std::string& title = "") {
+void drawFrame(int top, int left, int bottom, int right, const std::string& title = "") { 
     // Marco rectangular
     for (int x = left; x <= right; ++x) {
         mvaddch(top, x, '=');
@@ -30,7 +30,7 @@ void drawFrame(int top, int left, int bottom, int right, const std::string& titl
 }
 
 void centerPrint(int row, const std::string& s) {
-    int cols; int rows;
+    int cols, rows; // CORREGIDO: Separado en dos declaraciones
     getmaxyx(stdscr, rows, cols);
     int x = (cols - (int)s.size())/2;
     mvprintw(row, x, "%s", s.c_str());
@@ -150,9 +150,20 @@ void showInstructions() {
     drawFrame(top, left, bottom, right, " INSTRUCCIONES ");
     int y = top + 2;
 
+    // CORREGIDO: Inicializar la variable y
+    int y = top + 2;
+    
     // Objetivo del juego
     centerPrint(y++, "Objetivo: Romper todos los ladrillos con la pelota,");
     centerPrint(y++, "sin dejar que esta caiga al fondo, para sumar puntos.");
+    y++;
+
+    // Controles
+    centerPrint(y++, "Mover paleta: ← / →  (A / D)");
+    centerPrint(y++, "Lanzar pelota: Espacio");
+    centerPrint(y++, "Pausa: P");
+    centerPrint(y++, "Reiniciar nivel: R");
+    centerPrint(y++, "Salir: Esc / Q");
     y++;
 
     // Elementos visuales
@@ -206,7 +217,7 @@ void showHighscores() {
 
     // Se imprimen los puntajes altos
     int y = top + 4;
-    for (auto& s : lines) centerPrint(y++, s);
+    for (const auto& s : lines) centerPrint(y++, s);
     centerPrint(bottom - 2, "[ Enter / Esc para volver ]");
     refresh();
 
