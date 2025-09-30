@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <atomic>
 #include <unistd.h>
-#include "game.cpp"  // Incluye la definición de GameConfig
+#include "game.h"  
 
 // Variables externas del game.cpp
 extern pthread_mutex_t gMutex;

@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <atomic>
 #include <vector>
+#include "game.h"  
 
 
 // Estado general del juego
