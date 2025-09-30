@@ -1,3 +1,8 @@
+#include <pthread.h>
+#include <atomic>
+#include <vector>
+
+
 // Estado general del juego
 struct GameConfig {
     // Área jugable
@@ -31,6 +36,12 @@ struct GameConfig {
     int tick_ms;
     unsigned long frameCounter;
 };
+
+
+pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t gTickCV = PTHREAD_COND_INITIALIZER;
+std::atomic<bool> gStopAll(false);
+
 
 // Función auxiliar que espera hasta que toque la siguiente frame
 static unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame) {
