@@ -1,13 +1,8 @@
-// paddle.cpp- Implementación de 
-// Control de paleta y entrada del teclado
-
+#include "game.h"
 #include <ncurses.h>
 #include <pthread.h>
 #include <atomic>
 #include <unistd.h>
-#include "game.h"  
-
-// PADDLE THREAD - Mueve la paleta según la dirección que el user quiera 
 
 void* paddleThread(void* arg) {
     auto* cfg = (GameConfig*)arg;

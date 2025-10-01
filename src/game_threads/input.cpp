@@ -1,4 +1,4 @@
-// INPUT THREAD - lo que va a ser es que va a leer las  teclas y actualiza la intención del jugador
+#include "game.h"
 
 void* inputThread(void* arg) {
     auto* cfg = (GameConfig*)arg;

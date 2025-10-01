@@ -2,6 +2,7 @@
 #include <ncurses.h>
 #include <cstdlib>
 #include <ctime>
+#include <unistd.h>
 
 /*
 DEFINICIONES DE LAS VARIABLES Y FUNCIONES GLOBALES DECLARADAS EN game.h
@@ -113,26 +114,27 @@ void runGameplay() {
     computePlayArea(cfg);
     resetLevel(cfg);
 
-    // 2) Lanzar hilos (implementados en sus .cpp)
+    // 2) Lanzar hilos
     pthread_t tTick, tInput, tPaddle, tBall, tRender;
     gStopAll.store(false);
 
-    pthread_create(&tTick,   nullptr, tickThread,   &cfg);   // Coordinador de frames
-    pthread_create(&tInput,  nullptr, inputThread,  &cfg);   // Teclado
-    pthread_create(&tPaddle, nullptr, paddleThread, &cfg);   // Paleta
-    pthread_create(&tBall,   nullptr, ballThread,   &cfg);   // Pelota/física
-    pthread_create(&tRender, nullptr, renderThread, &cfg);   // Dibujo
+    pthread_create(&tTick, nullptr, tickThread,   &cfg);         // Coordinador de frames
+    pthread_create(&tInput, nullptr, inputThread,  &cfg);        // Teclado
+    pthread_create(&tPaddle, nullptr, paddleThread, &cfg);       // Paleta
+    pthread_create(&tBall, nullptr, ballThread,   &cfg);         // Pelota
+    pthread_create(&tCollisions, nullptr, collisionThread, &cfg) // Física de colisiones
+    pthread_create(&tRender, nullptr, renderThread, &cfg);       // Dibujo
 
-    // 3) Bucle liviano de control (reinicio/salida)
+    // 3) Bucle de control
     bool done = false;
     while (!done) {
-        usleep(10'000); // no saturar CPU; la lógica pesada vive en los hilos
+        usleep(10'000); // Obliga al bucle a dormir un poco para no saturar el CPU
 
         pthread_mutex_lock(&gMutex);
         bool restart = cfg.restartRequested;
         bool running = cfg.running;
-        bool won     = cfg.won;
-        bool lost    = cfg.lost;
+        bool won = cfg.won;
+        bool lost = cfg.lost;
         pthread_mutex_unlock(&gMutex);
 
         if (restart) {
@@ -142,7 +144,7 @@ void runGameplay() {
             continue;
         }
 
-        // Si el nivel terminó (win/lose) o alguien pidió salir (running=false)
+        // Si el nivel terminó o el usuario decidió salir
         if (!running && (won || lost || !restart)) {
             done = true;
         }
@@ -151,14 +153,13 @@ void runGameplay() {
     // 4) Parar hilos y limpiar
     gStopAll.store(true);
     pthread_mutex_lock(&gMutex);
-    pthread_cond_broadcast(&gTickCV); // despertar a quien espere el frame
+    pthread_cond_broadcast(&gTickCV); // Despertar a los hilos esperando frame
     pthread_mutex_unlock(&gMutex);
 
-    pthread_join(tTick,   nullptr);
-    pthread_join(tInput,  nullptr);
+    pthread_join(tTick, nullptr);
+    pthread_join(tInput, nullptr);
     pthread_join(tPaddle, nullptr);
-    pthread_join(tBall,   nullptr);
+    pthread_join(tBall, nullptr);
+    pthread_join(tCollisions, nullptr);
     pthread_join(tRender, nullptr);
-
-    // No hacemos endwin(); el menú lo controla fuera
 }

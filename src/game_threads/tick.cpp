@@ -1,3 +1,5 @@
+#include "game.h"
+
 void* tickThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
     

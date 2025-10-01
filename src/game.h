@@ -60,11 +60,12 @@ extern pthread_cond_t gTickCV;
 extern std::atomic<bool> gStopAll;
 
 // Declaraciones de hilos
-void* inputThread(void* arg);      // joel
-void* paddleThread(void* arg);     // joel
-void* ballThread(void* arg);       // LUPA
-void* renderThread(void* arg);     // Miguelito
-void* tickThread(void* arg);       // Coordinador
+void* tickThread(void* arg);       // Coordinador de frames
+void* inputThread(void* arg);      // Teclado
+void* paddleThread(void* arg);     // Paleta
+void* ballThread(void* arg);       // Pelota
+void* collisionsThread(void* arg); // Física de colisiones
+void* renderThread(void* arg);     // Dibujo
 
 // Función auxiliar
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame);

@@ -1,3 +1,5 @@
+#include "game.h"
+
 void* collisionThread(void* arg) {
     GameConfig* cfg = (GameConfig*)arg;
     unsigned long lastFrame = 0;

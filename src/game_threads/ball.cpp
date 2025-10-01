@@ -1,3 +1,5 @@
+#include "game.h"
+
 void* ballThread(void* arg) {
     GameConfig* cfg = (GameConfig*)arg;
     unsigned long lastFrame = 0;

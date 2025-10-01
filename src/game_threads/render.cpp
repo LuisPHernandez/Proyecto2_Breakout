@@ -1,3 +1,5 @@
+#include "game.h"
+
 void* renderThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
     unsigned long lastFrame = 0;
