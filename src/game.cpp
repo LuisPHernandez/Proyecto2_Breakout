@@ -147,7 +147,7 @@ void runGameplay() {
     }   
 
     // 2) Lanzar hilos
-    pthread_t tTick, tInput, tPaddle, tBall, tCollisionsWP, tCollisionsB, tRender, tState;
+    pthread_t tTick, tInput, tPaddle, tBall, tCollisionsWP, tCollisionsB, tRender, tState, tSpeed;
     gStopAll.store(false);
 
     pthread_create(&tTick, nullptr, tickThread, &cfg); // Coordinador de frames
@@ -158,6 +158,8 @@ void runGameplay() {
     pthread_create(&tCollisionsB, nullptr, collisionsBricksThread, &cfg); // Colisiones ladrillos
     pthread_create(&tRender, nullptr, renderThread, &cfg); // Dibujo
     pthread_create(&tState, nullptr, stateThread, &cfg);
+    pthread_create(&tSpeed, nullptr, speedThread, &cfg);
+
 
 
     // 3) Bucle de control
@@ -194,6 +196,7 @@ void runGameplay() {
     pthread_join(tCollisionsB, nullptr);
     pthread_join(tRender, nullptr);
     pthread_join(tState, nullptr);
+    pthread_join(tSpeed, nullptr);
 
     bool won, lost;
     pthread_mutex_lock(&gMutex);

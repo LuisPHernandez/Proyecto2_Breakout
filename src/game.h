@@ -58,6 +58,9 @@ struct GameConfig {
     int tick_ms;
     int step;
     unsigned long frameCounter;
+
+    //Velocidad
+    float ballSpeed = 1.0f;
 };
 
 // Variables globales compartidas
@@ -75,6 +78,7 @@ void* collisionsWallsPaddleThread(void* arg); // Colisiones con paredes y paleta
 void* collisionsBricksThread(void* arg); // Colisiones con ladrillos
 void* renderThread(void* arg); // Dibujo
 void* stateThread(void* arg); // Estado del juego
+void* speedThread(void* arg);
 
 // Función auxiliar
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame);
