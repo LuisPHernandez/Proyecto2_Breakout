@@ -32,6 +32,7 @@ struct GameConfig {
     float ballX, ballY;
     float ballVX, ballVY;
     bool ballLaunched;
+    bool ballJustReset;
 
     // Ladrillos
     int rows, cols, gapX, gapY, brickH;
@@ -48,6 +49,7 @@ struct GameConfig {
 
     // Timing
     int tick_ms;
+    int step;
     unsigned long frameCounter;
 };
 

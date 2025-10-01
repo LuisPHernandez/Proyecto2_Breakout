@@ -40,10 +40,9 @@ void* paddleThread(void* arg) {
             cfg->paddleX = newX;
             
             // Si la bola no ha sido lanzada, entonces se va a pegar  a la paleta
-            if (!cfg->ballLaunched) {
-                // Centrar la bola en la paleta
+            if (!cfg->ballLaunched && cfg->ballJustReset) {
                 cfg->ballX = cfg->paddleX + (cfg->paddleW / 2.0f);
-                cfg->ballY = cfg->paddleY - 1.0f;  // Justo encima de la paleta
+                cfg->ballY = cfg->paddleY - 1.0f;
             }
             
            

@@ -4,6 +4,7 @@
 #include <ncurses.h>    
 #include <cstddef>
 #include <cstring>
+#include <cmath>
 
 void* renderThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
@@ -11,92 +12,93 @@ void* renderThread(void* arg) {
     
     while (!gStopAll.load()) {
         lastFrame = waitNextFrame(cfg, lastFrame);
-        
+        GameConfig local;
+
         pthread_mutex_lock(&gMutex);
+        local = *cfg;
+        pthread_mutex_unlock(&gMutex);
 
         clear();
         
         // Dibujar marco del juego
-        for (int x = cfg->left; x <= cfg->right; ++x) {
-            mvaddch(cfg->top, x, '=');
-            mvaddch(cfg->bottom, x, '=');
+        for (int x = local.left; x <= local.right; ++x) {
+            mvaddch(local.top, x, '=');
+            mvaddch(local.bottom, x, '=');
         }
-        for (int y = cfg->top; y <= cfg->bottom; ++y) {
-            mvaddch(y, cfg->left, '|');
-            mvaddch(y, cfg->right, '|');
+        for (int y = local.top; y <= local.bottom; ++y) {
+            mvaddch(y, local.left, '|');
+            mvaddch(y, local.right, '|');
         }
-        mvaddch(cfg->top, cfg->left, '+');
-        mvaddch(cfg->top, cfg->right, '+');
-        mvaddch(cfg->bottom, cfg->left, '+');
-        mvaddch(cfg->bottom, cfg->right, '+');
+        mvaddch(local.top, local.left, '+');
+        mvaddch(local.top, local.right, '+');
+        mvaddch(local.bottom, local.left, '+');
+        mvaddch(local.bottom, local.right, '+');
         
         // Título
         const char* title = "BREAKOUT";
         int titleLen = (int)std::strlen(title);;
-        mvprintw(cfg->top, cfg->left + (cfg->w - titleLen) / 2, "%s", title);
+        mvprintw(local.top, local.left + (local.w - titleLen) / 2, "%s", title);
         
         // Información de estado
-        mvprintw(cfg->top + 1, cfg->left + 2, " Score: %d | Lives: %d | %s ", 
-                 cfg->score, cfg->lives, cfg->paused ? "PAUSED" : "PLAYING");
+        mvprintw(local.top + 1, local.left + 2, " Score: %d | Lives: %d | %s ", 
+                 local.score, local.lives, local.paused ? "PAUSED" : "PLAYING");
         
         // Instrucciones
-        mvprintw(cfg->bottom - 1, cfg->left + 2, 
+        mvprintw(local.bottom - 1, local.left + 2, 
                  "Flechas o A/D: Mover | SPACE: Lanzar | P: Pausa | R: Reiniciar | Q/ESC: Salir ");
         
         // Dibujar ladrillos
-        int totalGaps = (cfg->cols - 1) * cfg->gapX;
-        int usableW = cfg->w - 2;  // Ancho disponible dentro del marco
-        int brickW = (usableW - totalGaps) / cfg->cols;
-        int remainder = (usableW - totalGaps) - (brickW * cfg->cols);
+        int totalGaps = (local.cols - 1) * local.gapX;
+        int usableW = local.w - 2;  // Ancho disponible dentro del marco
+        int brickW = (usableW - totalGaps) / local.cols;
+        int remainder = (usableW - totalGaps) - (brickW * local.cols);
 
-        int startY = cfg->y0 + 2;
+        int startY = local.y0 + 2;
 
-        for (int r = 0; r < cfg->rows; ++r) {
-            int by = startY + r * (cfg->brickH + cfg->gapY);
+        for (int r = 0; r < local.rows; ++r) {
+            int by = startY + r * (local.brickH + local.gapY);
 
-            int x = cfg->x0 + 1;
-            for (int c = 0; c < cfg->cols; ++c) {
-                if (cfg->grid[r][c].hp > 0) {
+            int x = local.x0 + 1;
+            for (int c = 0; c < local.cols; ++c) {
+                if (local.grid[r][c].hp > 0) {
                     int thisW = brickW + (c < remainder ? 1 : 0);
 
                     for (int k = 0; k < thisW; ++k) {
-                        for (int h = 0; h < cfg->brickH; ++h) {
-                            mvaddch(by + h, x + k, cfg->grid[r][c].ch);
+                        for (int h = 0; h < local.brickH; ++h) {
+                            mvaddch(by + h, x + k, local.grid[r][c].ch);
                         }
                     }
                 }
                 x += brickW + (c < remainder ? 1 : 0);
-                if (c < cfg->cols - 1) x += cfg->gapX;
+                if (c < local.cols - 1) x += local.gapX;
             }
         }
 
         
         // Dibujar paleta
-        for (int i = 0; i < cfg->paddleW; ++i) {
-            mvaddch(cfg->paddleY, cfg->paddleX + i, '=');
+        for (int i = 0; i < local.paddleW; ++i) {
+            mvaddch(local.paddleY, local.paddleX + i, '=');
         }
         
         // Dibujar pelota
-        mvaddch((int)cfg->ballY, (int)cfg->ballX, 'o');
+        mvaddch((int)roundf(local.ballY), (int)roundf(local.ballX), 'o');
         
         // Indicador de bola no lanzada
-        if (!cfg->ballLaunched) {
-            mvprintw(cfg->y0 + cfg->h / 2, cfg->x0 + 2, "Presiona ESPACIO para lanzar la bola");
+        if (!local.ballLaunched) {
+            mvprintw(local.y0 + local.h / 2, local.x0 + 2, "Presiona ESPACIO para lanzar la bola");
         } 
         
         // Mensajes de fin
-        if (cfg->won) {
-            mvprintw(cfg->y0 + cfg->h / 2, cfg->x0 + cfg->w / 2 - 10, 
+        if (local.won) {
+            mvprintw(local.y0 + local.h / 2, local.x0 + local.w / 2 - 10, 
                      "¡GANASTE! Presiona Q");
         }
-        if (cfg->lost) {
-            mvprintw(cfg->y0 + cfg->h / 2, cfg->x0 + cfg->w / 2 - 10, 
+        if (local.lost) {
+            mvprintw(local.y0 + local.h / 2, local.x0 + local.w / 2 - 10, 
                      "PERDISTE - Presiona Q");
         }
         
         refresh();
-        
-        pthread_mutex_unlock(&gMutex);
     }
     
     return nullptr;

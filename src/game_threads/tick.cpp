@@ -14,6 +14,7 @@ void* tickThread(void* arg) {
         
         if (cfg->running && !cfg->paused) {
             cfg->frameCounter++;
+            cfg->step = 0; 
         }
         
         pthread_cond_broadcast(&gTickCV);

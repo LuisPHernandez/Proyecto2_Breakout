@@ -18,6 +18,9 @@ void* collisionsThread(void* arg) {
 
         pthread_mutex_lock(&gMutex);
         if (cfg->running && !cfg->paused && cfg->ballLaunched) {
+            while (!gStopAll.load() && cfg->step < 1) {
+                pthread_cond_wait(&gTickCV, &gMutex);
+            }
 
             // 1) Paredes laterales
             if (cfg->ballX <= cfg->x0 + 1) { // Pared izquierda
@@ -41,6 +44,7 @@ void* collisionsThread(void* arg) {
                 // Si toca el piso, el usuario pierde
                 cfg->lives--;
                 cfg->ballLaunched = false;
+                cfg->ballJustReset = true;
                 cfg->ballVX = 0.0f; cfg->ballVY = 0.0f;
                 cfg->ballX = cfg->paddleX + cfg->paddleW / 2.0f;
                 cfg->ballY = cfg->paddleY - 1.0f;
@@ -162,6 +166,8 @@ void* collisionsThread(void* arg) {
             if (!anyAlive) { // Si no hay ningun ladrillo vivo, el usuario ganó
                 cfg->won = true; cfg->running = false;
             }
+            cfg->step = 2; // Se marca que las colisiones fueron resueltas
+            pthread_cond_broadcast(&gTickCV);
         }
         pthread_mutex_unlock(&gMutex);
     }

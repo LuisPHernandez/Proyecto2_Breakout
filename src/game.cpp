@@ -86,12 +86,14 @@ static void resetLevel(GameConfig& cfg) {
     cfg.paddleX = (cfg.x0 + cfg.x1) / 2;
 
     cfg.ballLaunched = false;
+    cfg.ballJustReset = true;
     cfg.ballVX = 0.0f; cfg.ballVY = 0.0f;
     cfg.ballX = cfg.paddleX + cfg.paddleW / 2.0f;
     cfg.ballY = cfg.paddleY - 1.0f;
 
     buildDefaultLevel(cfg);
     cfg.frameCounter = 0;
+    cfg.step = 0;
 }
 
 /*
@@ -128,8 +130,6 @@ void runGameplay() {
     // 3) Bucle de control
     bool done = false;
     while (!done) {
-        usleep(10'000); // Obliga al bucle a dormir un poco para no saturar el CPU
-
         pthread_mutex_lock(&gMutex);
         bool restart = cfg.restartRequested;
         bool running = cfg.running;

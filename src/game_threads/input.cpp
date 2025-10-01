@@ -5,6 +5,7 @@
 #include <unistd.h>      
 #include <cstddef>     
 #include <chrono>
+#include <cstdlib>
 
 void* inputThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
@@ -19,7 +20,6 @@ void* inputThread(void* arg) {
     while (!gStopAll.load()) {
         // Esperar siguiente frame
         lastFrame = waitNextFrame(cfg, lastFrame);
-        usleep(10'000);
         int ch = getch();
         
         if (ch != ERR) {
@@ -57,8 +57,9 @@ void* inputThread(void* arg) {
                 case ' ':  // Espacio
                     if (!cfg->ballLaunched && cfg->running) {
                         cfg->ballLaunched = true;
+                        cfg->ballJustReset = false;
                         // Velocidad inicial de la bola (para arriba)
-                        cfg->ballVX = 0;
+                        cfg->ballVX = (rand() % 2 == 0 ? -0.3f : 0.3f);;
                         cfg->ballVY = -1.0f; // Hacia arriba
                     }
                     lastInput = clock::now();
