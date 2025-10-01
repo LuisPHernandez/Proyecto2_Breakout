@@ -46,6 +46,7 @@ struct GameConfig {
     bool restartRequested;
     bool won;
     bool lost;
+    bool gridDirty;
 
     // Timing
     int tick_ms;

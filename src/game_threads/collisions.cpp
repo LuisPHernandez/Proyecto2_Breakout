@@ -141,6 +141,7 @@ void* collisionsThread(void* arg) {
                             b.hp--;
                             if (b.hp <= 0) {
                                 cfg->score += b.points;
+                                cfg->gridDirty = true;
                             }
 
                             // Se calcula el angulo de salida

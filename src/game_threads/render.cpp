@@ -9,10 +9,10 @@
 void* renderThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
     unsigned long lastFrame = 0;
+    GameConfig local;
     
     while (!gStopAll.load()) {
         lastFrame = waitNextFrame(cfg, lastFrame);
-        GameConfig local;
 
         pthread_mutex_lock(&gMutex);
         local = *cfg;
@@ -48,33 +48,38 @@ void* renderThread(void* arg) {
                  "Flechas o A/D: Mover | SPACE: Lanzar | P: Pausa | R: Reiniciar | Q/ESC: Salir ");
         
         // Dibujar ladrillos
-        int totalGaps = (local.cols - 1) * local.gapX;
-        int usableW = local.w - 2;  // Ancho disponible dentro del marco
-        int brickW = (usableW - totalGaps) / local.cols;
-        int remainder = (usableW - totalGaps) - (brickW * local.cols);
+        if (local.gridDirty) {
+            int totalGaps = (local.cols - 1) * local.gapX;
+            int usableW = local.w - 2;  // Ancho disponible dentro del marco
+            int brickW = (usableW - totalGaps) / local.cols;
+            int remainder = (usableW - totalGaps) - (brickW * local.cols);
 
-        int startY = local.y0 + 2;
+            int startY = local.y0 + 2;
 
-        for (int r = 0; r < local.rows; ++r) {
-            int by = startY + r * (local.brickH + local.gapY);
+            for (int r = 0; r < local.rows; ++r) {
+                int by = startY + r * (local.brickH + local.gapY);
 
-            int x = local.x0 + 1;
-            for (int c = 0; c < local.cols; ++c) {
-                if (local.grid[r][c].hp > 0) {
-                    int thisW = brickW + (c < remainder ? 1 : 0);
+                int x = local.x0 + 1;
+                for (int c = 0; c < local.cols; ++c) {
+                    if (local.grid[r][c].hp > 0) {
+                        int thisW = brickW + (c < remainder ? 1 : 0);
 
-                    for (int k = 0; k < thisW; ++k) {
-                        for (int h = 0; h < local.brickH; ++h) {
-                            mvaddch(by + h, x + k, local.grid[r][c].ch);
+                        for (int k = 0; k < thisW; ++k) {
+                            for (int h = 0; h < local.brickH; ++h) {
+                                mvaddch(by + h, x + k, local.grid[r][c].ch);
+                            }
                         }
                     }
+                    x += brickW + (c < remainder ? 1 : 0);
+                    if (c < local.cols - 1) x += local.gapX;
                 }
-                x += brickW + (c < remainder ? 1 : 0);
-                if (c < local.cols - 1) x += local.gapX;
             }
         }
 
-        
+        pthread_mutex_lock(&gMutex);
+        cfg->gridDirty = false;
+        pthread_mutex_unlock(&gMutex);
+
         // Dibujar paleta
         for (int i = 0; i < local.paddleW; ++i) {
             mvaddch(local.paddleY, local.paddleX + i, '=');

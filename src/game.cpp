@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <unistd.h>
+#include <cstring>
 
 /*
 DEFINICIONES DE LAS VARIABLES Y FUNCIONES GLOBALES DECLARADAS EN game.h
@@ -90,10 +91,29 @@ static void resetLevel(GameConfig& cfg) {
     cfg.ballVX = 0.0f; cfg.ballVY = 0.0f;
     cfg.ballX = cfg.paddleX + cfg.paddleW / 2.0f;
     cfg.ballY = cfg.paddleY - 1.0f;
+    cfg.gridDirty = true;
 
     buildDefaultLevel(cfg);
     cfg.frameCounter = 0;
     cfg.step = 0;
+}
+
+// Muestra pantalla de fin de juego
+static void showEndScreenBlocking(bool won) {
+    clear();
+    int rows, cols; getmaxyx(stdscr, rows, cols);
+    const char* msg1 = won ? "¡GANASTE!" : "PERDISTE";
+    const char* msg2 = "Presiona ENTER para continuar";
+    mvprintw(rows/2 - 1, (cols - (int)strlen(msg1))/2, "%s", msg1);
+    mvprintw(rows/2 + 1, (cols - (int)strlen(msg2))/2, "%s", msg2);
+    refresh();
+
+    // esperar Enter
+    int ch;
+    nodelay(stdscr, FALSE);   // modo bloqueante temporal
+    keypad(stdscr, TRUE);
+    while ((ch = getch()) != '\n' && ch != KEY_ENTER) { /*bloqueante*/ }
+    nodelay(stdscr, TRUE);    // volver a no bloqueante si lo usas así
 }
 
 /*
@@ -105,9 +125,9 @@ void runGameplay() {
 
     // 1) Config inicial
     GameConfig cfg{};
-    cfg.tick_ms = 48; // ~20 FPS
-    cfg.rows = 5;
-    cfg.cols = 14;
+    cfg.tick_ms = 60;
+    cfg.rows = 4;
+    cfg.cols = 10;
     cfg.gapX = 1;
     cfg.gapY = 1;
     cfg.brickH = 1;
@@ -162,4 +182,15 @@ void runGameplay() {
     pthread_join(tBall, nullptr);
     pthread_join(tCollisions, nullptr);
     pthread_join(tRender, nullptr);
+
+    bool won, lost;
+    pthread_mutex_lock(&gMutex);
+    won = cfg.won;
+    lost = cfg.lost;
+    pthread_mutex_unlock(&gMutex);
+
+    // Pantalla final: si se ganó o perdió
+    if (won || lost) {
+        showEndScreenBlocking(won);
+    }
 }
