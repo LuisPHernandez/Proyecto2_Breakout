@@ -146,7 +146,7 @@ void runGameplay() {
     }   
 
     // 2) Lanzar hilos
-    pthread_t tTick, tInput, tPaddle, tBall, tCollisionsWP, tCollisionsB, tRender, tState;
+    pthread_t tTick, tInput, tPaddle, tBall, tCollisionsWP, tCollisionsB, tRender, tState, tSpeed;
     gStopAll.store(false);
 
     pthread_create(&tTick, nullptr, tickThread, &cfg);
@@ -157,6 +157,8 @@ void runGameplay() {
     pthread_create(&tCollisionsB, nullptr, collisionsBricksThread, &cfg);
     pthread_create(&tRender, nullptr, renderThread, &cfg);
     pthread_create(&tState, nullptr, stateThread, &cfg);
+    pthread_create(&tSpeed, nullptr, speedThread, &cfg);
+
 
     // 3) Bucle de control
     pthread_mutex_lock(&gMutex);
@@ -192,6 +194,7 @@ void runGameplay() {
     pthread_join(tCollisionsB, nullptr);
     pthread_join(tRender, nullptr);
     pthread_join(tState, nullptr);
+    pthread_join(tSpeed, nullptr);
 
     bool won, lost;
     pthread_mutex_lock(&gMutex);
