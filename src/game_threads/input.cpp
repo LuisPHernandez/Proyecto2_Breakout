@@ -16,19 +16,43 @@ void* inputThread(void* arg) {
 
     while (!gStopAll.load()) {
         int ch = getch();
+        
 
         if (ch != ERR) {
             pthread_mutex_lock(&gMutex);
 
             switch (ch) {
-                case KEY_LEFT: case 'a': case 'A':
-                    cfg->desiredDir = -1; 
-                    lastInput = clock::now(); 
+                case 'a':
+                case 'A':
+                    cfg->desiredDir = -1;             // mover paleta 1 a la izquierda
+                    lastInput = clock::now();
                     break;
-                    
-                case KEY_RIGHT: case 'd': case 'D':
-                    cfg->desiredDir = 1; 
-                    lastInput = clock::now(); 
+
+                case 'd':
+                case 'D':
+                    cfg->desiredDir = 1;              // mover paleta 1 a la derecha
+                    lastInput = clock::now();
+                    break;
+
+                // --- Movimiento P2 con flechas ---
+                case KEY_LEFT:
+                    if (cfg->twoPlayers) {
+                        cfg->desiredDir2 = -1;        // mover paleta 2 a la izquierda
+                        lastInput = clock::now();
+                    } else {
+                        cfg->desiredDir = -1;         // en single player, flechas también mueven P1
+                        lastInput = clock::now();
+                    }
+                    break;
+
+                case KEY_RIGHT:
+                    if (cfg->twoPlayers) {
+                        cfg->desiredDir2 = 1;         // mover paleta 2 a la derecha
+                        lastInput = clock::now();
+                    } else {
+                        cfg->desiredDir = 1;          // en single player, flechas también mueven P1
+                        lastInput = clock::now();
+                    }
                     break;
 
                 case 'p': case 'P':
@@ -73,6 +97,7 @@ void* inputThread(void* arg) {
             if (now - lastInput > std::chrono::milliseconds(50)) {
                 pthread_mutex_lock(&gMutex);
                 cfg->desiredDir = 0;
+                if (cfg->twoPlayers) cfg->desiredDir2 = 0;
                 pthread_mutex_unlock(&gMutex);
             }
             usleep(50000); // 3ms

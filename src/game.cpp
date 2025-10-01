@@ -113,6 +113,14 @@ static void resetLevel(GameConfig& cfg) {
     cfg.paddleW = 9;
     cfg.paddleX = (cfg.x0 + cfg.x1) / 2;
 
+    cfg.paddle2W = cfg.paddleW;
+    cfg.paddle2Y = cfg.paddleY;
+    cfg.paddle2X = cfg.x0 + (cfg.w * 3) / 4;
+    cfg.paddleX  = cfg.x0 + (cfg.w * 1) / 4;
+
+    cfg.desiredDir  = 0;
+    cfg.desiredDir2 = 0;
+
     cfg.ballLaunched = false;
     cfg.ballJustReset = true;
     cfg.ballSpeed = 1.0f;  // Velocidad inicial normal
@@ -157,12 +165,13 @@ static void showEndScreenBlocking(bool won) {
 FUNCIÓN PRINCIPAL Y PUNTO DE ENTRADA DESDE EL MENÚ
 */
 
-void runGameplay() {
+void runGameplay(bool twoPlayers) {
     std::srand((unsigned)std::time(nullptr));
 
     // 1) Config inicial
     GameConfig cfg{};
     cfg.tick_ms = 60000;
+    cfg.twoPlayers = twoPlayers;
     cfg.rows = 4;
     cfg.cols = 10;
     cfg.gapX = 1;

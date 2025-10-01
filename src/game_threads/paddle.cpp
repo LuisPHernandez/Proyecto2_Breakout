@@ -35,6 +35,15 @@ void* paddleThread(void* arg) {
                     cfg->ballX = cfg->paddleX + (cfg->paddleW / 2.0f);
                     cfg->ballY = cfg->paddleY - 1.0f;
                 }
+                
+                if (cfg->twoPlayers) {
+                    int newX2 = cfg->paddle2X + (cfg->desiredDir2 * PADDLE_SPEED);
+                    int minX2 = cfg->x0;
+                    int maxX2 = cfg->x1 - cfg->paddle2W + 1;
+                    if (newX2 < minX2) newX2 = minX2;
+                    else if (newX2 > maxX2) newX2 = maxX2;
+                    cfg->paddle2X = newX2;
+                }
             }
 
             cfg->step = 1;
