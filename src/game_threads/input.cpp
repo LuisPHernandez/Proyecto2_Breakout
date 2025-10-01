@@ -3,13 +3,17 @@
 #include <atomic>       
 #include <ncurses.h>     
 #include <unistd.h>      
-#include <cstddef>      
+#include <cstddef>     
+#include <chrono>
 
 void* inputThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
-    
+
     // Configurar getch() en modo no bloqueante
     nodelay(stdscr, TRUE);
+
+    using clock = std::chrono::steady_clock;
+    auto lastInput = clock::now();
     
     while (!gStopAll.load()) {
         int ch = getch();
@@ -23,6 +27,7 @@ void* inputThread(void* arg) {
                 case 'a':
                 case 'A':
                     cfg->desiredDir = -1;
+                    lastInput = clock::now();
                     break;
                 
                 // MOVIMIENTO DERECHA
@@ -30,13 +35,7 @@ void* inputThread(void* arg) {
                 case 'd':
                 case 'D':
                     cfg->desiredDir = 1;
-                    break;
-                
-                // DETENER MOVIMIENTO 
-                case KEY_DOWN:
-                case 's':
-                case 'S':
-                    cfg->desiredDir = 0;
+                    lastInput = clock::now();
                     break;
                 
                 // PAUSA
@@ -47,16 +46,18 @@ void* inputThread(void* arg) {
                         // Reanudar todos los hilos que esperan
                         pthread_cond_broadcast(&gTickCV);
                     }
+                    lastInput = clock::now();
                     break;
                 
                 // LANZAR BOLA
                 case ' ':  // Espacio
                     if (!cfg->ballLaunched && cfg->running) {
                         cfg->ballLaunched = true;
-                        // Velocidad inicial de la bola (pa arriba)
-                        cfg->ballVX = 0.5f;  // tiene un poco de  inclinación
+                        // Velocidad inicial de la bola (para arriba)
+                        cfg->ballVX = 0;
                         cfg->ballVY = -1.0f; // Hacia arriba
                     }
+                    lastInput = clock::now();
                     break;
                 
                 // REINICIAR NIVEL
@@ -66,23 +67,30 @@ void* inputThread(void* arg) {
                         cfg->restartRequested = true;
                         pthread_cond_broadcast(&gTickCV);
                     }
+                    lastInput = clock::now();
                     break;
                 
                 // SALIR
                 case 'q':
                 case 'Q':
-                case 27:  // con "ESC"
+                case 27:  // "ESC"
                     cfg->running = false;
                     gStopAll.store(true);
                     pthread_cond_broadcast(&gTickCV);
+                    lastInput = clock::now();
                     break;
             }
             
             pthread_mutex_unlock(&gMutex);
+        } else {
+            // No hubo tecla, paramos la paleta
+            auto now = clock::now();
+            if (now - lastInput > std::chrono::milliseconds(80)) {
+                pthread_mutex_lock(&gMutex);
+                cfg->desiredDir = 0;
+                pthread_mutex_unlock(&gMutex);
+            }
         }
-        
-        //pausa para no presionar mucho al CPU
-        usleep(10000);  // 10ms
     }
     
     return nullptr;

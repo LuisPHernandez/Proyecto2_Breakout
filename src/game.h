@@ -68,4 +68,7 @@ void* renderThread(void* arg);     // Dibujo
 // Función auxiliar
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame);
 
+// Función principal del juego
+void runGameplay();
+
 #endif // GAME_H

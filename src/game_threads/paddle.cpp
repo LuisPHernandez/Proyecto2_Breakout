@@ -7,7 +7,7 @@
 void* paddleThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
     unsigned long lastFrame = 0;
-    
+
     while (!gStopAll.load()) {
         // Esperar siguiente frame
         lastFrame = waitNextFrame(cfg, lastFrame);

@@ -116,6 +116,9 @@ void runGameplay() {
     resetLevel(cfg);
 
     // 2) Lanzar hilos
+    int numThreads = 6; // Número de hilos que deben sincronizarse en cada frame
+    pthread_barrier_init(&gFrameBarrier, nullptr, numThreads);
+
     pthread_t tTick, tInput, tPaddle, tBall, tCollisions, tRender;
     gStopAll.store(false);
 

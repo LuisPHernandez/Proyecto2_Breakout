@@ -54,6 +54,7 @@ void* collisionsThread(void* arg) {
             // 3) Paleta
             if (!cfg->paused && cfg->running) {
                 int half = cfg->paddleW / 2; // Mitad del ancho de la paleta
+                if (half <= 0) half = 1;
                 int py = cfg->paddleY;
                 
                 if ((int)cfg->ballY == py - 1) { // Impacto con la paleta (pelota una fila arriba)
@@ -78,8 +79,17 @@ void* collisionsThread(void* arg) {
             // 4) Ladrillos
             int totalGaps = (cfg->cols - 1) * cfg->gapX; // Suma total de espacios en blanco entre ladrillos
             int usableW   = cfg->w - 2;                  // Margen interno
-            int brickW    = (usableW - totalGaps) / cfg->cols;
-            int remainder = (usableW - totalGaps) - (brickW * cfg->cols);
+            if (usableW < 1) usableW = 1;
+
+            int cols = (cfg->cols > 0 ? cfg->cols : 1); 
+
+            if (totalGaps >= usableW) totalGaps = 0;
+
+            int brickW = (usableW - totalGaps) / cols;
+            if (brickW < 1) brickW = 1;
+
+            int remainder = (usableW - totalGaps) - (brickW * cols);
+            if (remainder < 0) remainder = 0;
             int startY    = cfg->y0 + 2;
 
             // Detectamos fila por Y

@@ -2,7 +2,8 @@
 #include <pthread.h>    
 #include <atomic>     
 #include <ncurses.h>    
-#include <cstddef> 
+#include <cstddef>
+#include <cstring>
 
 void* renderThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
@@ -12,8 +13,7 @@ void* renderThread(void* arg) {
         lastFrame = waitNextFrame(cfg, lastFrame);
         
         pthread_mutex_lock(&gMutex);
-        
-        // TODO: MIGUEL - Implementar dibujado completo con ladrillos
+
         clear();
         
         // Dibujar marco del juego
@@ -31,8 +31,8 @@ void* renderThread(void* arg) {
         mvaddch(cfg->bottom, cfg->right, '+');
         
         // Título
-        const char* title = " BREAKOUT - PERSONA 2 DEMO ";
-        int titleLen = 28;
+        const char* title = "BREAKOUT";
+        int titleLen = (int)std::strlen(title);;
         mvprintw(cfg->top, cfg->left + (cfg->w - titleLen) / 2, "%s", title);
         
         // Información de estado
@@ -41,35 +41,48 @@ void* renderThread(void* arg) {
         
         // Instrucciones
         mvprintw(cfg->bottom - 1, cfg->left + 2, 
-                 " ←/→ o A/D: Mover | SPACE: Lanzar | P: Pausa | R: Reiniciar | Q/ESC: Salir ");
+                 "Flechas o A/D: Mover | SPACE: Lanzar | P: Pausa | R: Reiniciar | Q/ESC: Salir ");
         
-        // Dibujar ladrillos (placeholder simple)
+        // Dibujar ladrillos
+        int totalGaps = (cfg->cols - 1) * cfg->gapX;
+        int usableW = cfg->w - 2;  // Ancho disponible dentro del marco
+        int brickW = (usableW - totalGaps) / cfg->cols;
+        int remainder = (usableW - totalGaps) - (brickW * cfg->cols);
+
         int startY = cfg->y0 + 2;
+
         for (int r = 0; r < cfg->rows; ++r) {
-            int by = startY + r * 2;
+            int by = startY + r * (cfg->brickH + cfg->gapY);
+
+            int x = cfg->x0 + 1;
             for (int c = 0; c < cfg->cols; ++c) {
                 if (cfg->grid[r][c].hp > 0) {
-                    int bx = cfg->x0 + c * 6;
-                    for (int i = 0; i < 5; ++i) {
-                        mvaddch(by, bx + i, cfg->grid[r][c].ch);
+                    int thisW = brickW + (c < remainder ? 1 : 0);
+
+                    for (int k = 0; k < thisW; ++k) {
+                        for (int h = 0; h < cfg->brickH; ++h) {
+                            mvaddch(by + h, x + k, cfg->grid[r][c].ch);
+                        }
                     }
                 }
+                x += brickW + (c < remainder ? 1 : 0);
+                if (c < cfg->cols - 1) x += cfg->gapX;
             }
         }
+
         
-        // ========== DIBUJAR PALETA ========== (Persona 2 controla esto)
+        // Dibujar paleta
         for (int i = 0; i < cfg->paddleW; ++i) {
             mvaddch(cfg->paddleY, cfg->paddleX + i, '=');
         }
         
-        // ========== DIBUJAR BOLA ========== (Persona 2 mantiene posición si no lanzada)
+        // Dibujar pelota
         mvaddch((int)cfg->ballY, (int)cfg->ballX, 'o');
         
         // Indicador de bola no lanzada
         if (!cfg->ballLaunched) {
-            mvprintw(cfg->y0 + cfg->h / 2, cfg->x0 + 2, 
-                     "Presiona ESPACIO para lanzar la bola");
-        }
+            mvprintw(cfg->y0 + cfg->h / 2, cfg->x0 + 2, "Presiona ESPACIO para lanzar la bola");
+        } 
         
         // Mensajes de fin
         if (cfg->won) {
@@ -78,7 +91,7 @@ void* renderThread(void* arg) {
         }
         if (cfg->lost) {
             mvprintw(cfg->y0 + cfg->h / 2, cfg->x0 + cfg->w / 2 - 10, 
-                     "GAME OVER - Presiona Q");
+                     "PERDISTE - Presiona Q");
         }
         
         refresh();
