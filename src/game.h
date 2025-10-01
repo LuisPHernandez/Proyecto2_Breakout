@@ -15,9 +15,9 @@ entre diferentes módulos del programa, facilitando la organización y reutiliza
 
 // Estructura de un ladrillo
 struct Brick {
-    int hp;      // Puntos de vida (0 = destruido)
-    char ch;     // Carácter visual ('#', '%', '@', etc.)
-    int points;  // Puntos que otorga al destruirse
+    int hp;      // Puntos de vida
+    char ch;     // Carácter visual
+    int points;  // Puntos que otorga
 };
 
 // Estado general del juego
@@ -29,7 +29,7 @@ struct GameConfig {
     // Paleta
     int paddleW;
     int paddleX, paddleY;
-    int desiredDir;  // -1=izq, 0=quieto, 1=der
+    int desiredDir;
 
     // Bola
     float ballX, ballY;
@@ -66,7 +66,7 @@ void* ballThread(void* arg);       // LUPA
 void* renderThread(void* arg);     // Miguelito
 void* tickThread(void* arg);       // Coordinador
 
-// Función auxiliar definida en paddle.cpp
+// Función auxiliar
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame);
 
 #endif // GAME_H
