@@ -14,6 +14,9 @@ pthread_cond_t gTickCV = PTHREAD_COND_INITIALIZER;
 pthread_cond_t gCtrlCV = PTHREAD_COND_INITIALIZER;
 std::atomic<bool> gStopAll(false);
 
+// Variable global para guardar el score final
+static int g_finalScore = 0;
+
 // Permite a los hilos esperar al siguiente frame para sincronizarse
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame) {
     pthread_mutex_lock(&gMutex);
@@ -86,6 +89,7 @@ static void resetLevel(GameConfig& cfg) {
 
     cfg.ballLaunched = false;
     cfg.ballJustReset = true;
+    cfg.ballSpeed = 1.0f;  // Velocidad inicial normal
     cfg.ballVX = 0.0f; 
     cfg.ballVY = 0.0f;
     cfg.ballX = cfg.paddleX + cfg.paddleW / 2.0f;
@@ -159,7 +163,6 @@ void runGameplay() {
     pthread_create(&tState, nullptr, stateThread, &cfg);
     pthread_create(&tSpeed, nullptr, speedThread, &cfg);
 
-
     // 3) Bucle de control
     pthread_mutex_lock(&gMutex);
     while (true) {
@@ -200,6 +203,7 @@ void runGameplay() {
     pthread_mutex_lock(&gMutex);
     won = cfg.won;
     lost = cfg.lost;
+    g_finalScore = cfg.score; // Guardar score final
     pthread_mutex_unlock(&gMutex);
 
     if (won || lost) {
@@ -210,4 +214,9 @@ void runGameplay() {
         delwin(cfg.winPlay); 
         cfg.winPlay = nullptr; 
     }
+}
+
+// Función para obtener el score final del último juego
+int getGameScore() {
+    return g_finalScore;
 }

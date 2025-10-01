@@ -1,5 +1,7 @@
 #include "../game.h"
 #include <algorithm>    // std::min, std::max
+#include <pthread.h>
+#include <atomic>
 
 extern pthread_mutex_t gMutex;
 extern std::atomic<bool> gStopAll;
@@ -18,17 +20,19 @@ void* speedThread(void* arg) {
         throttle = 0;
 
         pthread_mutex_lock(&gMutex);
+        
         // Limita y suaviza hacia un objetivo (si alguien cambió brusco con teclas)
         cfg->ballSpeed = std::max(0.5f, std::min(2.0f, cfg->ballSpeed));
 
-        // (Opcional) pequeña auto-aceleración por score; quita esto si no lo quieres
+        // Pequeña auto-aceleración por score
         float target = cfg->ballSpeed;
         if      (cfg->score >= 400) target = std::max(target, 1.6f);
         else if (cfg->score >= 200) target = std::max(target, 1.4f);
         else if (cfg->score >= 100) target = std::max(target, 1.2f);
 
-        // Lerp suave
+        // Lerp suave (interpolación lineal)
         cfg->ballSpeed += 0.10f * (target - cfg->ballSpeed);
+        
         pthread_mutex_unlock(&gMutex);
     }
     return nullptr;

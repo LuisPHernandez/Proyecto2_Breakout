@@ -34,13 +34,14 @@ struct GameConfig {
     // Bola
     float ballX, ballY;
     float ballVX, ballVY;
+    float ballSpeed;      // Multiplicador de velocidad
     bool ballLaunched;
     bool ballJustReset;
 
     // Ladrillos
     int rows, cols, gapX, gapY, brickH;
     std::vector<std::vector<Brick>> grid;
-    std::vector<std::string> brickBuffer; // Buffer “pre-renderizado” de ladrillos
+    std::vector<std::string> brickBuffer; // Buffer "pre-renderizado" de ladrillos
     bool brickBufferReady = false;  // Indica que brickBuffer ya está construido
 
     // Estado general
@@ -58,9 +59,6 @@ struct GameConfig {
     int tick_ms;
     int step;
     unsigned long frameCounter;
-
-    //Velocidad
-    float ballSpeed = 1.0f;
 };
 
 // Variables globales compartidas
@@ -78,12 +76,15 @@ void* collisionsWallsPaddleThread(void* arg); // Colisiones con paredes y paleta
 void* collisionsBricksThread(void* arg); // Colisiones con ladrillos
 void* renderThread(void* arg); // Dibujo
 void* stateThread(void* arg); // Estado del juego
-void* speedThread(void* arg);
+void* speedThread(void* arg); // Control de velocidad
 
 // Función auxiliar
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame);
 
 // Función principal del juego
 void runGameplay();
+
+// Función para obtener el score final del juego
+int getGameScore();
 
 #endif // GAME_H

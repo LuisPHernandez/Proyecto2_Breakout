@@ -16,8 +16,9 @@ void* ballThread(void* arg) {
         }
 
         if (cfg->running && !cfg->paused && cfg->ballLaunched) {
-            cfg->ballX += cfg->ballVX;
-            cfg->ballY += cfg->ballVY;
+            // Aplicar el multiplicador de velocidad
+            cfg->ballX += cfg->ballVX * cfg->ballSpeed;
+            cfg->ballY += cfg->ballVY * cfg->ballSpeed;
         }
 
         if (cfg->running) {
