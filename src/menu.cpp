@@ -112,7 +112,7 @@ Screen showMainMenu() {
             centerPrint(y, line);
             if (i == selected) attroff(A_REVERSE);
         }
-        centerPrint(bottom - 2, "Usa ↑/↓ (o W/S)  Enter=Seleccionar  Esc=Salir");
+        centerPrint(bottom - 2, "Usa Flechas W/S)  Enter = Seleccionar  Esc = Salir");
 
         // Refresca la pantalla (Se dibuja en la terminal todo lo acumulado en el buffer)
         refresh();

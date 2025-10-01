@@ -37,13 +37,13 @@ void* collisionsThread(void* arg) {
                 cfg->ballVY = -cfg->ballVY;  // Cambio en dirección de velocidad en y (rebote)
                 getAngle(cfg->ballVX, cfg->ballVY);
             }
-            if (cfg->ballY >= cfg->y1 - 1) { // Piso
+            if (cfg->ballY > cfg->y1 - 1) { // Piso
                 // Si toca el piso, el usuario pierde
                 cfg->lives--;
                 cfg->ballLaunched = false;
                 cfg->ballVX = 0.0f; cfg->ballVY = 0.0f;
-                cfg->ballX = cfg->paddleX;
-                cfg->ballY = cfg->paddleY - 1;
+                cfg->ballX = cfg->paddleX + cfg->paddleW / 2.0f;
+                cfg->ballY = cfg->paddleY - 1.0f;
 
                 if (cfg->lives <= 0) {
                     cfg->lost = true;
@@ -57,20 +57,18 @@ void* collisionsThread(void* arg) {
                 if (half <= 0) half = 1;
                 int py = cfg->paddleY;
                 
-                if ((int)cfg->ballY == py - 1) { // Impacto con la paleta (pelota una fila arriba)
-                    if ((int)cfg->ballX >= cfg->paddleX - half && // Pelota dentro del ancho de la paleta
-                        (int)cfg->ballX <= cfg->paddleX + half) {
-
-                        // La pelota sube, cambio en dirección de velocidad
+                if ((int)cfg->ballY == py - 1) { // Impacto una fila arriba de la paleta
+                    int bx = (int)cfg->ballX;
+                    if (bx >= cfg->paddleX && bx <= (cfg->paddleX + (cfg->paddleW - 1))) { // Impacto dentro del ancho de la paleta
                         cfg->ballY = py - 2;
                         cfg->ballVY = -std::abs(cfg->ballVY > 0 ? cfg->ballVY : 1.0f);
 
-                        // Ángulo según punto de impacto relativo
-                        int rel = (int)cfg->ballX - cfg->paddleX;    // Distancia de punto de impacto a centro de la paleta
-                        float normalized = (float)rel / (float)half; // Normaliza a un valor entre -1 y 1
-                        cfg->ballVX = normalized * 1.2f;             // Multiplica la distancia normalizada por 1.2 (máxima)
+                        // Ángulo según punto de impacto relativo respecto al centro
+                        float center = cfg->paddleX + cfg->paddleW / 2.0f;
+                        float half = std::max(1.0f, cfg->paddleW / 2.0f);
+                        float rel = (cfg->ballX - center) / half;   // en [-1..+1]
+                        cfg->ballVX = rel * 1.2f;
 
-                        // Se calcula el ángulo de salida
                         getAngle(cfg->ballVX, cfg->ballVY);
                     }
                 }
@@ -166,9 +164,6 @@ void* collisionsThread(void* arg) {
             }
         }
         pthread_mutex_unlock(&gMutex);
-
-        // Fin de fase física
-        pthread_barrier_wait(&gFrameBarrier);
     }
     return nullptr;
 }

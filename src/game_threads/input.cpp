@@ -11,11 +11,15 @@ void* inputThread(void* arg) {
 
     // Configurar getch() en modo no bloqueante
     nodelay(stdscr, TRUE);
+    unsigned long lastFrame = 0;
 
     using clock = std::chrono::steady_clock;
     auto lastInput = clock::now();
     
     while (!gStopAll.load()) {
+        // Esperar siguiente frame
+        lastFrame = waitNextFrame(cfg, lastFrame);
+        usleep(10'000);
         int ch = getch();
         
         if (ch != ERR) {

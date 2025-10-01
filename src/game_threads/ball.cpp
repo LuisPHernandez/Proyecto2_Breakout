@@ -18,9 +18,6 @@ void* ballThread(void* arg) {
             cfg->ballY += cfg->ballVY;
         }
         pthread_mutex_unlock(&gMutex);
-
-        // Al terminar de actualizar, sincroniza con el resto de hilos
-        pthread_barrier_wait(&gFrameBarrier);
     }
     return nullptr;
 }

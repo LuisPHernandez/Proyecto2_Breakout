@@ -54,7 +54,6 @@ struct GameConfig {
 // Variables globales compartidas
 extern pthread_mutex_t gMutex;
 extern pthread_cond_t gTickCV;
-extern pthread_barrier_t gFrameBarrier;
 extern std::atomic<bool> gStopAll;
 
 // Declaraciones de hilos

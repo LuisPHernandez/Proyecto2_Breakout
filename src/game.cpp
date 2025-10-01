@@ -10,7 +10,6 @@ DEFINICIONES DE LAS VARIABLES Y FUNCIONES GLOBALES DECLARADAS EN game.h
 
 pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t gTickCV = PTHREAD_COND_INITIALIZER;
-pthread_barrier_t gFrameBarrier;
 std::atomic<bool> gStopAll(false);
 
 // Permite a los hilos esperar al siguiente frame para sincronizarse
@@ -88,8 +87,8 @@ static void resetLevel(GameConfig& cfg) {
 
     cfg.ballLaunched = false;
     cfg.ballVX = 0.0f; cfg.ballVY = 0.0f;
-    cfg.ballX = cfg.paddleX;
-    cfg.ballY = cfg.paddleY - 1;
+    cfg.ballX = cfg.paddleX + cfg.paddleW / 2.0f;
+    cfg.ballY = cfg.paddleY - 1.0f;
 
     buildDefaultLevel(cfg);
     cfg.frameCounter = 0;
@@ -116,9 +115,6 @@ void runGameplay() {
     resetLevel(cfg);
 
     // 2) Lanzar hilos
-    int numThreads = 6; // Número de hilos que deben sincronizarse en cada frame
-    pthread_barrier_init(&gFrameBarrier, nullptr, numThreads);
-
     pthread_t tTick, tInput, tPaddle, tBall, tCollisions, tRender;
     gStopAll.store(false);
 
