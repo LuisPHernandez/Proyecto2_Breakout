@@ -17,39 +17,67 @@ void* collisionsBricksThread(void* arg) {
 
         if (cfg->running && !cfg->paused && cfg->ballLaunched) {
             int totalGaps = (cfg->cols - 1) * cfg->gapX;
-            int usableW   = cfg->w;
+            int usableW   = cfg->w - 2;
             int cols      = (cfg->cols > 0 ? cfg->cols : 1);
             int brickW    = std::max(1, (usableW - totalGaps) / cols);
             int remainder = (usableW - totalGaps) - (brickW * cols);
-            int startY    = cfg->y0 + 1 + 1;
+            int startY    = cfg->y0 + 2;
 
-            int yInt = (int)std::round(cfg->ballY);
-            if (yInt >= startY && yInt < startY + cfg->rows * (cfg->brickH + cfg->gapY)) {
-                int r = -1;
-                for (int i = 0; i < cfg->rows; ++i) {
-                    int by = startY + i * (cfg->brickH + cfg->gapY);
-                    if (yInt == by) { r = i; break; }
-                }
-                if (r >= 0) {
+            int ballIntY = (int)std::round(cfg->ballY);
+            int ballIntX = (int)std::round(cfg->ballX);
+
+            bool collisionFound = false;
+
+            // Buscar colisión con ladrillos
+            for (int r = 0; r < cfg->rows && !collisionFound; ++r) {
+                int by = startY + r * (cfg->brickH + cfg->gapY);
+                
+                // Verificar si la pelota está a la altura de esta fila
+                bool inRow = (ballIntY >= by && ballIntY < by + cfg->brickH);
+                
+                if (inRow) {
+                    // Buscar en qué columna está
                     int x = cfg->x0 + 1;
-                    int cHit = -1, hitW = 0, startX = x;
-                    for (int c = 0; c < cfg->cols; ++c) {
+                    
+                    for (int c = 0; c < cfg->cols && !collisionFound; ++c) {
                         int thisW = brickW + (c < remainder ? 1 : 0);
-                        if ((int)std::round(cfg->ballX) >= x && (int)std::round(cfg->ballX) < x + thisW) {
-                            cHit = c; hitW = thisW; startX = x; break;
-                        }
-                        x += thisW; if (c < cfg->cols - 1) x += cfg->gapX;
-                    }
-                    if (cHit >= 0) {
-                        Brick &b = cfg->grid[r][cHit];
-                        if (b.hp > 0) {
-                            int localX = (int)std::round(cfg->ballX) - startX;
-                            if (localX <= 0 || localX >= hitW - 1) cfg->ballVX = -cfg->ballVX;
-                            else                                   cfg->ballVY = -cfg->ballVY;
+                        
+                        // Verificar si la pelota está dentro de este ladrillo horizontalmente
+                        bool inCol = (ballIntX >= x && ballIntX < x + thisW);
+                        
+                        if (inCol) {
+                            Brick &brick = cfg->grid[r][c];
+                            
+                            if (brick.hp > 0) {
+                                // Calcular posición relativa dentro del ladrillo
+                                int relY = ballIntY - by;
+                                int relX = ballIntX - x;
+                                
+                                // Determinar si golpea arriba/abajo o izquierda/derecha
+                                bool hitSide = (relX == 0 || relX == thisW - 1);
+                                bool hitTopBottom = (relY == 0 || relY == cfg->brickH - 1);
+                                
+                                if (hitSide) {
+                                    cfg->ballVX = -cfg->ballVX;
+                                } else {
+                                    cfg->ballVY = -cfg->ballVY;
+                                }
 
-                            b.hp--;
-                            if (b.hp <= 0) { cfg->score += b.points; cfg->gridDirty = true; }
+                                // Reducir HP del ladrillo
+                                brick.hp--;
+                                
+                                // Si se destruyó, sumar puntos
+                                if (brick.hp <= 0) {
+                                    cfg->score += brick.points;
+                                    cfg->gridDirty = true;
+                                }
+                                
+                                collisionFound = true;
+                            }
                         }
+                        
+                        x += thisW;
+                        if (c < cfg->cols - 1) x += cfg->gapX;
                     }
                 }
             }

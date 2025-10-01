@@ -3,8 +3,8 @@
 #include <atomic>
 #include <cmath>
 
-static void getAngle(float& vx, float& vy) {
-    const float MIN_X = 0.2f, MIN_Y = 0.4f;
+static void normalizeAngle(float& vx, float& vy) {
+    const float MIN_X = 0.15f, MIN_Y = 0.25f;
     if (std::fabs(vx) < MIN_X) vx = (vx >= 0 ? MIN_X : -MIN_X);
     if (std::fabs(vy) < MIN_Y) vy = (vy >= 0 ? MIN_Y : -MIN_Y);
 }
@@ -22,36 +22,57 @@ void* collisionsWallsPaddleThread(void* arg) {
         }
 
         if (cfg->running && !cfg->paused && cfg->ballLaunched) {
-            // Paredes laterales
-            if (cfg->ballX <= cfg->x0 + 1) { cfg->ballX = cfg->x0 + 2; cfg->ballVX = -cfg->ballVX; getAngle(cfg->ballVX, cfg->ballVY); }
-            if (cfg->ballX >= cfg->x1 - 1) { cfg->ballX = cfg->x1 - 2; cfg->ballVX = -cfg->ballVX; getAngle(cfg->ballVX, cfg->ballVY); }
+            // Paredes laterales (en coordenadas de pantalla)
+            if (cfg->ballX <= cfg->x0 + 1) { 
+                cfg->ballX = cfg->x0 + 2; 
+                cfg->ballVX = -cfg->ballVX; 
+                normalizeAngle(cfg->ballVX, cfg->ballVY); 
+            }
+            if (cfg->ballX >= cfg->x1 - 1) { 
+                cfg->ballX = cfg->x1 - 2; 
+                cfg->ballVX = -cfg->ballVX; 
+                normalizeAngle(cfg->ballVX, cfg->ballVY); 
+            }
 
             // Techo
-            if (cfg->ballY <= cfg->y0 + 1) { cfg->ballY = cfg->y0 + 2; cfg->ballVY = -cfg->ballVY; getAngle(cfg->ballVX, cfg->ballVY); }
+            if (cfg->ballY <= cfg->y0 + 2) { 
+                cfg->ballY = cfg->y0 + 3; 
+                cfg->ballVY = -cfg->ballVY; 
+                normalizeAngle(cfg->ballVX, cfg->ballVY); 
+            }
 
-            // Piso
-            if (cfg->ballY > cfg->y1 - 1) {
+            // Piso (perder vida)
+            if (cfg->ballY >= cfg->paddleY + 2) {
                 cfg->lives--;
                 cfg->ballLaunched = false;
                 cfg->ballJustReset = true;
-                cfg->ballVX = 0.0f; cfg->ballVY = 0.0f;
+                cfg->ballVX = 0.0f; 
+                cfg->ballVY = 0.0f;
                 cfg->ballX = cfg->paddleX + cfg->paddleW / 2.0f;
                 cfg->ballY = cfg->paddleY - 1.0f;
-                if (cfg->lives <= 0) { cfg->lost = true; cfg->running = false; }
+                
+                if (cfg->lives <= 0) { 
+                    cfg->lost = true; 
+                    cfg->running = false;
+                    pthread_cond_signal(&gCtrlCV);
+                }
             }
 
-            // Paleta
-            int py = cfg->paddleY;
-            if ((int)std::round(cfg->ballY) == py - 1) {
-                int bx = (int)std::round(cfg->ballX);
-                if (bx >= cfg->paddleX && bx <= (cfg->paddleX + (cfg->paddleW - 1))) {
-                    cfg->ballY = py - 2;
-                    cfg->ballVY = -std::fabs(cfg->ballVY > 0 ? cfg->ballVY : 1.0f);
+            // Colisión con paleta
+            int ballIntY = (int)std::round(cfg->ballY);
+            int ballIntX = (int)std::round(cfg->ballX);
+            
+            if (ballIntY == cfg->paddleY - 1 || ballIntY == cfg->paddleY) {
+                if (ballIntX >= cfg->paddleX && ballIntX < cfg->paddleX + cfg->paddleW) {
+                    cfg->ballY = cfg->paddleY - 2;
+                    cfg->ballVY = -std::fabs(cfg->ballVY);
+                    
+                    // Ajustar dirección horizontal según dónde golpeó
                     float center = cfg->paddleX + cfg->paddleW / 2.0f;
                     float half   = std::max(1.0f, cfg->paddleW / 2.0f);
                     float rel    = (cfg->ballX - center) / half; // [-1..+1]
-                    cfg->ballVX  = rel * 1.2f;
-                    getAngle(cfg->ballVX, cfg->ballVY);
+                    cfg->ballVX  = rel * 0.6f;
+                    normalizeAngle(cfg->ballVX, cfg->ballVY);
                 }
             }
         }

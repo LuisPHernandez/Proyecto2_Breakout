@@ -15,17 +15,33 @@ void* stateThread(void* arg) {
         }
 
         if (cfg->running) {
-            // Victoria
+            // Verificar victoria
             bool anyAlive = false;
             for (auto &row : cfg->grid) {
-                for (auto &b : row) { if (b.hp > 0) { anyAlive = true; break; } }
+                for (auto &b : row) { 
+                    if (b.hp > 0) { 
+                        anyAlive = true; 
+                        break; 
+                    } 
+                }
                 if (anyAlive) break;
             }
-            if (!anyAlive) { cfg->won = true; cfg->running = false; }
+            
+            if (!anyAlive) { 
+                cfg->won = true; 
+                cfg->running = false;
+                // IMPORTANTE: Notificar al hilo de control
+                pthread_cond_signal(&gCtrlCV);
+            }
+            
+            // Si se perdió (detectado en collisionsWallsPaddle)
+            if (cfg->lost) {
+                pthread_cond_signal(&gCtrlCV);
+            }
         }
 
         if (cfg->running) {
-            cfg->step = 5;
+            cfg->step = 0; // Completar el ciclo
             pthread_cond_broadcast(&gTickCV);
         }
 

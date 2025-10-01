@@ -19,23 +19,25 @@ void* paddleThread(void* arg) {
         }
 
         if (cfg->running) {
-            // Mover paleta si no pausado
+            // Mover paleta si no está pausado
             if (!cfg->paused) {
                 const int PADDLE_SPEED = 2;
                 int newX = cfg->paddleX + cfg->desiredDir * PADDLE_SPEED;
-                int minX = cfg->x0;
-                int maxX = cfg->x1 - cfg->paddleW + 1;
+                int minX = cfg->x0 + 1;
+                int maxX = cfg->x1 - cfg->paddleW;
+                
                 if (newX < minX) newX = minX;
                 if (newX > maxX) newX = maxX;
                 cfg->paddleX = newX;
 
+                // Si la bola no ha sido lanzada, mantenerla sobre la paleta
                 if (!cfg->ballLaunched && cfg->ballJustReset) {
                     cfg->ballX = cfg->paddleX + (cfg->paddleW / 2.0f);
                     cfg->ballY = cfg->paddleY - 1.0f;
                 }
             }
 
-            cfg->step = 1; // Siguiente fase
+            cfg->step = 1;
             pthread_cond_broadcast(&gTickCV);
         }
 

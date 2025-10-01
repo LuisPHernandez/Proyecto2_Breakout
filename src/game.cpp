@@ -11,14 +11,14 @@ DEFINICIONES DE LAS VARIABLES Y FUNCIONES GLOBALES DECLARADAS EN game.h
 
 pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t gTickCV = PTHREAD_COND_INITIALIZER;
-pthread_cond_t  gCtrlCV = PTHREAD_COND_INITIALIZER;
+pthread_cond_t gCtrlCV = PTHREAD_COND_INITIALIZER;
 std::atomic<bool> gStopAll(false);
 
 // Permite a los hilos esperar al siguiente frame para sincronizarse
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame) {
     pthread_mutex_lock(&gMutex);
     while (!gStopAll.load() &&
-           (cfg->paused || cfg->frameCounter == lastFrame || !cfg->running)) {
+           (cfg->frameCounter == lastFrame || !cfg->running)) {
         pthread_cond_wait(&gTickCV, &gMutex);
     }
     unsigned long f = cfg->frameCounter;
@@ -32,9 +32,8 @@ HELPERS LOCALES DE ESTE MÓDULO
 
 // Construye el nivel default del juego
 static void buildDefaultLevel(GameConfig& cfg) {
-    cfg.grid.assign(cfg.rows, std::vector<Brick>(cfg.cols)); // Inicializa objetos de Brick para todas las filas/columnas de ladrillos
+    cfg.grid.assign(cfg.rows, std::vector<Brick>(cfg.cols));
 
-    // Asigna un tipo de ladrillo específico a cada posición
     for (int r = 0; r < cfg.rows; ++r) {
         for (int c = 0; c < cfg.cols; ++c) {
             Brick b{};
@@ -52,30 +51,28 @@ static void buildDefaultLevel(GameConfig& cfg) {
     }
 }
 
-
 // Calcula la geometría del área de juego
 static void computePlayArea(GameConfig& cfg) {
-    int rows, cols; getmaxyx(stdscr, rows, cols); // Se obtiene el tamaño de la terminal en filas y columnas
+    int rows, cols; 
+    getmaxyx(stdscr, rows, cols);
 
-    // Se calcula un rectangulo centrado para dibujar el marco de la aplicación
     cfg.top    = rows/2 - 12;
     cfg.bottom = rows/2 + 12;
     cfg.left   = cols/2 - 40;
     cfg.right  = cols/2 + 40;
 
-    // Se calculan las coordenadas y medidas internas del marco
-    cfg.x0 = cfg.left + 1;  cfg.y0 = cfg.top + 1;
-    cfg.x1 = cfg.right - 1; cfg.y1 = cfg.bottom - 1;
+    cfg.x0 = cfg.left + 1;  
+    cfg.y0 = cfg.top + 1;
+    cfg.x1 = cfg.right - 1; 
+    cfg.y1 = cfg.bottom - 1;
     cfg.w  = cfg.x1 - cfg.x0 + 1;
     cfg.h  = cfg.y1 - cfg.y0 + 1;
 
-    // Se pone la paleta una fila arriba del borde inferior
-    cfg.paddleY = cfg.y1 - 1; 
+    cfg.paddleY = cfg.y1 - 1;
 }
 
 // Permite reiniciar el nivel
 static void resetLevel(GameConfig& cfg) {
-    // Reinicia config a valores por defecto
     cfg.score = 0;
     cfg.lives = 3;
     cfg.paused = false;
@@ -89,7 +86,8 @@ static void resetLevel(GameConfig& cfg) {
 
     cfg.ballLaunched = false;
     cfg.ballJustReset = true;
-    cfg.ballVX = 0.0f; cfg.ballVY = 0.0f;
+    cfg.ballVX = 0.0f; 
+    cfg.ballVY = 0.0f;
     cfg.ballX = cfg.paddleX + cfg.paddleW / 2.0f;
     cfg.ballY = cfg.paddleY - 1.0f;
     cfg.gridDirty = true;
@@ -104,19 +102,19 @@ static void resetLevel(GameConfig& cfg) {
 // Muestra pantalla de fin de juego
 static void showEndScreenBlocking(bool won) {
     clear();
-    int rows, cols; getmaxyx(stdscr, rows, cols);
+    int rows, cols; 
+    getmaxyx(stdscr, rows, cols);
     const char* msg1 = won ? "¡GANASTE!" : "PERDISTE";
     const char* msg2 = "Presiona ENTER para continuar";
     mvprintw(rows/2 - 1, (cols - (int)strlen(msg1))/2, "%s", msg1);
     mvprintw(rows/2 + 1, (cols - (int)strlen(msg2))/2, "%s", msg2);
     refresh();
 
-    // esperar Enter
     int ch;
-    nodelay(stdscr, FALSE);   // modo bloqueante temporal
+    nodelay(stdscr, FALSE);
     keypad(stdscr, TRUE);
-    while ((ch = getch()) != '\n' && ch != KEY_ENTER) { /*bloqueante*/ }
-    nodelay(stdscr, TRUE);    // volver a no bloqueante si lo usas así
+    while ((ch = getch()) != '\n' && ch != KEY_ENTER) { }
+    nodelay(stdscr, TRUE);
 }
 
 /*
@@ -128,7 +126,7 @@ void runGameplay() {
 
     // 1) Config inicial
     GameConfig cfg{};
-    cfg.tick_ms = 60;
+    cfg.tick_ms = 12; // ~83 FPS - balance entre fluidez y control
     cfg.rows = 4;
     cfg.cols = 10;
     cfg.gapX = 1;
@@ -138,6 +136,7 @@ void runGameplay() {
 
     computePlayArea(cfg);
     resetLevel(cfg);
+    
     if (!cfg.winPlay) {
         int playH = cfg.h;
         int playW = cfg.w;
@@ -150,32 +149,31 @@ void runGameplay() {
     pthread_t tTick, tInput, tPaddle, tBall, tCollisionsWP, tCollisionsB, tRender, tState;
     gStopAll.store(false);
 
-    pthread_create(&tTick, nullptr, tickThread, &cfg); // Coordinador de frames
-    pthread_create(&tInput, nullptr, inputThread, &cfg); // Teclado
-    pthread_create(&tPaddle, nullptr, paddleThread, &cfg); // Paleta
-    pthread_create(&tBall, nullptr, ballThread, &cfg); // Pelota
-    pthread_create(&tCollisionsWP, nullptr, collisionsWallsPaddleThread, &cfg); // Colisiones pared y paleta
-    pthread_create(&tCollisionsB, nullptr, collisionsBricksThread, &cfg); // Colisiones ladrillos
-    pthread_create(&tRender, nullptr, renderThread, &cfg); // Dibujo
+    pthread_create(&tTick, nullptr, tickThread, &cfg);
+    pthread_create(&tInput, nullptr, inputThread, &cfg);
+    pthread_create(&tPaddle, nullptr, paddleThread, &cfg);
+    pthread_create(&tBall, nullptr, ballThread, &cfg);
+    pthread_create(&tCollisionsWP, nullptr, collisionsWallsPaddleThread, &cfg);
+    pthread_create(&tCollisionsB, nullptr, collisionsBricksThread, &cfg);
+    pthread_create(&tRender, nullptr, renderThread, &cfg);
     pthread_create(&tState, nullptr, stateThread, &cfg);
-
 
     // 3) Bucle de control
     pthread_mutex_lock(&gMutex);
     while (true) {
-        // Espera a que algo relevante ocurra: restart o fin de juego
-        while (!cfg.restartRequested && cfg.running && !cfg.won && !cfg.lost) {
+        // Espera a que algo relevante ocurra
+        while (!cfg.restartRequested && cfg.running) {
             pthread_cond_wait(&gCtrlCV, &gMutex);
         }
 
         if (cfg.restartRequested) {
-            resetLevel(cfg); // reinicia todo el estado de juego
+            resetLevel(cfg);
             cfg.restartRequested = false;
-            // Señalamos a todos los hilos para que recojan el nuevo estado
             pthread_cond_broadcast(&gTickCV);
             continue;
         }
 
+        // Si no es restart, es porque terminó (won/lost)
         break;
     }
     pthread_mutex_unlock(&gMutex);
@@ -183,7 +181,7 @@ void runGameplay() {
     // 4) Parar hilos y limpiar
     gStopAll.store(true);
     pthread_mutex_lock(&gMutex);
-    pthread_cond_broadcast(&gTickCV); // Despertar a los hilos esperando frame
+    pthread_cond_broadcast(&gTickCV);
     pthread_mutex_unlock(&gMutex);
 
     pthread_join(tTick, nullptr);
@@ -201,9 +199,12 @@ void runGameplay() {
     lost = cfg.lost;
     pthread_mutex_unlock(&gMutex);
 
-    // Pantalla final: si se ganó o perdió
     if (won || lost) {
         showEndScreenBlocking(won);
     }
-    if (cfg.winPlay) { delwin(cfg.winPlay); cfg.winPlay = nullptr; }
+    
+    if (cfg.winPlay) { 
+        delwin(cfg.winPlay); 
+        cfg.winPlay = nullptr; 
+    }
 }

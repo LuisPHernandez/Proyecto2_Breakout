@@ -22,9 +22,14 @@ void* inputThread(void* arg) {
 
             switch (ch) {
                 case KEY_LEFT: case 'a': case 'A':
-                    cfg->desiredDir = -1; lastInput = clock::now(); break;
+                    cfg->desiredDir = -1; 
+                    lastInput = clock::now(); 
+                    break;
+                    
                 case KEY_RIGHT: case 'd': case 'D':
-                    cfg->desiredDir = 1; lastInput = clock::now(); break;
+                    cfg->desiredDir = 1; 
+                    lastInput = clock::now(); 
+                    break;
 
                 case 'p': case 'P':
                     cfg->paused = !cfg->paused;
@@ -36,23 +41,26 @@ void* inputThread(void* arg) {
                     if (!cfg->ballLaunched && cfg->running) {
                         cfg->ballLaunched = true;
                         cfg->ballJustReset = false;
-                        cfg->ballVX = (std::rand() % 2 == 0 ? -0.5f : 0.5f);
-                        cfg->ballVY = -1.0f;
+                        cfg->ballVX = (std::rand() % 2 == 0 ? -0.25f : 0.25f);
+                        cfg->ballVY = -0.5f;
                     }
                     lastInput = clock::now();
                     break;
 
                 case 'r': case 'R':
-                    if (cfg->running) {
+                    if (cfg->running || cfg->won || cfg->lost) {
                         cfg->restartRequested = true;
+                        cfg->running = true; // Reactivar si estaba terminado
+                        pthread_cond_signal(&gCtrlCV); // Notificar al control
                         pthread_cond_broadcast(&gTickCV);
                     }
                     lastInput = clock::now();
                     break;
 
-                case 'q': case 'Q': case 27:
+                case 'q': case 'Q': case 27: // ESC
                     cfg->running = false;
                     gStopAll.store(true);
+                    pthread_cond_signal(&gCtrlCV);
                     pthread_cond_broadcast(&gTickCV);
                     lastInput = clock::now();
                     break;
@@ -60,15 +68,14 @@ void* inputThread(void* arg) {
 
             pthread_mutex_unlock(&gMutex);
         } else {
-            // No tecla; si pasaron >80ms sin input, para la paleta
+            // No hay tecla presionada
             auto now = clock::now();
-            if (now - lastInput > std::chrono::milliseconds(80)) {
+            if (now - lastInput > std::chrono::milliseconds(50)) {
                 pthread_mutex_lock(&gMutex);
                 cfg->desiredDir = 0;
                 pthread_mutex_unlock(&gMutex);
             }
-            // Pequeño descanso (no bloqueante)
-            usleep(5'000);
+            usleep(3000); // 3ms
         }
     }
 

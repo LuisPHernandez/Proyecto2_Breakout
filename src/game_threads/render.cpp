@@ -5,7 +5,6 @@
 #include <cstring>
 #include <cmath>
 
-
 void* renderThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
     unsigned long lastFrame = 0;
@@ -21,6 +20,8 @@ void* renderThread(void* arg) {
 
         // 1) Marco + HUD una vez
         if (!local.frameDrawn) {
+            clear();
+            
             // Dibuja el marco
             for (int x = local.left; x <= local.right; ++x) {
                 mvaddch(local.top, x, '=');
@@ -40,107 +41,87 @@ void* renderThread(void* arg) {
             int titleLen = (int)std::strlen(title);
             mvprintw(local.top, local.left + (local.w - titleLen) / 2, "%s", title);
 
-            // HUD inferior persistente (etiquetas)
-            mvprintw(local.bottom - 1, local.left + 2,
-                "Flechas/A-D: Mover | SPACE: Lanzar | P: Pausa | R: Reiniciar | Q/ESC: Salir ");
+            // HUD inferior persistente
+            mvprintw(local.bottom + 1, local.left + 2,
+                "Flechas/A-D: Mover | SPACE: Lanzar | P: Pausa | R: Reiniciar | Q/ESC: Salir");
 
-            // Marca frameDrawn en la config real
             pthread_mutex_lock(&gMutex);
             cfg->frameDrawn = true;
             pthread_mutex_unlock(&gMutex);
         }
 
-        werase(local.winPlay);
+        // 2) Limpiar área de juego completa (entre el marco)
+        for (int y = local.y0 + 1; y < local.y1; ++y) {
+            for (int x = local.x0 + 1; x < local.x1; ++x) {
+                mvaddch(y, x, ' ');
+            }
+        }
 
-        // 2) HUD dinámico (score/vidas/paused)
+        // 3) HUD dinámico (score/vidas/paused)
         mvprintw(local.top + 1, local.left + 2, " Score: %d | Lives: %d | %s ",
                  local.score, local.lives, local.paused ? "PAUSED" : "PLAYING");
 
-        // 3) Ladrillos sólo si gridDirty
-        if (local.gridDirty) {
-            std::vector<std::string> buf(local.h, std::string(local.w, ' '));
+        // 4) Dibujar ladrillos
+        int totalGaps = (local.cols - 1) * local.gapX;
+        int usableW   = local.w - 2;
+        int brickW    = (usableW - totalGaps) / local.cols;
+        int remainder = (usableW - totalGaps) - (brickW * local.cols);
+        int startY    = local.y0 + 2;
 
-            // Limpia área de ladrillos (rellenar espacios sobre el bloque de ladrillos)
-            int totalGaps = (local.cols - 1) * local.gapX;
-            int usableW   = local.w - 2;
-            int brickW    = (usableW - totalGaps) / local.cols;
-            int remainder = (usableW - totalGaps) - (brickW * local.cols);
-            int startY    = local.y0 + 2;
-
-            // Borra zona de ladrillos (opcional: repinta espacios)
-            for (int r = 0; r < local.rows; ++r) {
-                int by = startY + r * (local.brickH + local.gapY);
-                for (int c = local.x0 + 1; c < local.x1; ++c) {
-                    mvaddch(by, c, ' ');
-                }
-            }
-
-            // Dibuja ladrillos vivos
-            for (int r = 0; r < local.rows; ++r) {
-                int by = startY + r * (local.brickH + local.gapY);
-                int x = local.x0 + 1;
-                for (int c = 0; c < local.cols; ++c) {
-                    if (local.grid[r][c].hp > 0) {
-                        int thisW = brickW + (c < remainder ? 1 : 0);
-                        for (int k = 0; k < thisW; ++k) {
-                            for (int h = 0; h < local.brickH; ++h) {
-                                mvaddch(by + h, x + k, local.grid[r][c].ch);
-                            }
+        for (int r = 0; r < local.rows; ++r) {
+            int by = startY + r * (local.brickH + local.gapY);
+            int x = local.x0 + 1;
+            for (int c = 0; c < local.cols; ++c) {
+                if (local.grid[r][c].hp > 0) {
+                    int thisW = brickW + (c < remainder ? 1 : 0);
+                    for (int k = 0; k < thisW; ++k) {
+                        for (int h = 0; h < local.brickH; ++h) {
+                            mvaddch(by + h, x + k, local.grid[r][c].ch);
                         }
                     }
-                    x += brickW + (c < remainder ? 1 : 0);
-                    if (c < local.cols - 1) x += local.gapX;
                 }
+                x += brickW + (c < remainder ? 1 : 0);
+                if (c < local.cols - 1) x += local.gapX;
             }
+        }
 
-            // Se apaga gridDirty en config
+        // Resetear gridDirty después de dibujar
+        if (local.gridDirty) {
             pthread_mutex_lock(&gMutex);
-            cfg->brickBuffer.swap(buf);
-            cfg->brickBufferReady = true;
             cfg->gridDirty = false;
             pthread_mutex_unlock(&gMutex);
         }
 
-        if (local.brickBufferReady) {
-            for (int y = 0; y < (int)local.brickBuffer.size(); ++y) {
-                // 1 llamada por fila:
-                mvwaddnstr(local.winPlay, y, 0,
-                        local.brickBuffer[y].c_str(),
-                        (int)local.brickBuffer[y].size());
-            }
-        }
-
-        // 4) Paleta
+        // 5) Paleta
+        int paddleScreenY = local.paddleY;
+        int paddleScreenX = local.paddleX;
         for (int i = 0; i < local.paddleW; ++i) {
-            mvwaddch(local.winPlay,
-                    local.paddleY - local.y0 - 1,
-                    local.paddleX - local.x0 - 1 + i, '=');
+            mvaddch(paddleScreenY, paddleScreenX + i, '=');
         }
 
-        // 5) Pelota
-        mvwaddch(local.winPlay,
-                (int)std::round(local.ballY) - local.y0 - 1,
-                (int)std::round(local.ballX) - local.x0 - 1, 'o');
+        // 6) Pelota
+        int ballScreenY = (int)std::round(local.ballY);
+        int ballScreenX = (int)std::round(local.ballX);
+        mvaddch(ballScreenY, ballScreenX, 'o');
 
-        // 6) Mensajes
+        // 7) Mensajes centrados
         if (!local.ballLaunched) {
-            mvprintw(local.y0 + local.h/2, local.x0 + 2, "Presiona ESPACIO para lanzar la bola");
+            const char* msg = "Presiona ESPACIO para lanzar la bola";
+            int msgLen = strlen(msg);
+            mvprintw(local.y0 + local.h/2, local.x0 + (local.w - msgLen)/2, "%s", msg);
         }
         if (local.won) {
-            mvprintw(local.y0 + local.h/2, local.x0 + local.w/2 - 10, "¡GANASTE! Presiona Q");
+            const char* msg = "¡GANASTE! Presiona R";
+            int msgLen = strlen(msg);
+            mvprintw(local.y0 + local.h/2, local.x0 + (local.w - msgLen)/2, "%s", msg);
         }
         if (local.lost) {
-            mvprintw(local.y0 + local.h/2, local.x0 + local.w/2 - 10, "PERDISTE - Presiona Q");
+            const char* msg = "PERDISTE - Presiona R";
+            int msgLen = strlen(msg);
+            mvprintw(local.y0 + local.h/2, local.x0 + (local.w - msgLen)/2, "%s", msg);
         }
 
         refresh();
-
-        // Cierra el paso
-        pthread_mutex_lock(&gMutex);
-        if (cfg->running) {
-            // nada; tick pondrá step = 0 al siguiente frame
-        }
-        pthread_mutex_unlock(&gMutex);
     }
 
     return nullptr;
