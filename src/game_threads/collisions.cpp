@@ -1,6 +1,15 @@
-#include "game.h"
+#include "../game.h"
+#include <pthread.h>
+#include <atomic>
+#include <vector>
+#include <cmath>
+#include <cstddef>
+#include <cmath>
 
-void* collisionThread(void* arg) {
+// Función implementada más abajo
+static void getAngle(float& vx, float& vy);
+
+void* collisionsThread(void* arg) {
     GameConfig* cfg = (GameConfig*)arg;
     unsigned long lastFrame = 0;
 
@@ -14,19 +23,19 @@ void* collisionThread(void* arg) {
             if (cfg->ballX <= cfg->x0 + 1) { // Pared izquierda
                 cfg->ballX = cfg->x0 + 2;
                 cfg->ballVX = -cfg->ballVX;  // Cambio en dirección de velocidad en x (rebote)
-                ensureInterestingAngle(cfg->ballVX, cfg->ballVY);
+                getAngle(cfg->ballVX, cfg->ballVY);
             }
             if (cfg->ballX >= cfg->x1 - 1) { // Pared derecha
                 cfg->ballX = cfg->x1 - 2;   
                 cfg->ballVX = -cfg->ballVX;  // Cambio en dirección de velocidad en x (rebote)
-                ensureInterestingAngle(cfg->ballVX, cfg->ballVY);
+                getAngle(cfg->ballVX, cfg->ballVY);
             }
 
             // 2) Techo y piso
             if (cfg->ballY <= cfg->y0 + 1) { // Techo
                 cfg->ballY = cfg->y0 + 2;
                 cfg->ballVY = -cfg->ballVY;  // Cambio en dirección de velocidad en y (rebote)
-                ensureInterestingAngle(cfg->ballVX, cfg->ballVY);
+                getAngle(cfg->ballVX, cfg->ballVY);
             }
             if (cfg->ballY >= cfg->y1 - 1) { // Piso
                 // Si toca el piso, el usuario pierde
@@ -61,7 +70,7 @@ void* collisionThread(void* arg) {
                         cfg->ballVX = normalized * 1.2f;             // Multiplica la distancia normalizada por 1.2 (máxima)
 
                         // Se calcula el ángulo de salida
-                        ensureInterestingAngle(cfg->ballVX, cfg->ballVY);
+                        getAngle(cfg->ballVX, cfg->ballVY);
                     }
                 }
             }
@@ -104,7 +113,7 @@ void* collisionThread(void* arg) {
 
                     if (cHit >= 0) { // Si se encuentra un ladrillo
                         Brick &b = cfg->grid[r][cHit]; // Se toma una referencia al objeto Brick correspondiente a ese ladrillo
-                        if (b.alive) { // Solo hay colisión si el ladrillo no ha sido destruido
+                        if (b.hp > 0) { // Solo hay colisión si el ladrillo no ha sido destruido
                             // Decide rebote vertical u horizontal aproximado:
                             // Si impacta cerca de los bordes izquierdo/derecho del ladrillo → invierte X,
                             // si no → invierte Y.
@@ -117,14 +126,13 @@ void* collisionThread(void* arg) {
                             }
 
                             // Daño al ladrillo
-                            b.lives--;
-                            cfg->score += 10;
-                            if (b.lives <= 0) {
-                                b.alive = false;
+                            b.hp--;
+                            if (b.hp <= 0) {
+                                cfg->score += b.points;
                             }
 
                             // Se calcula el angulo de salida
-                            ensureInterestingAngle(cfg->ballVX, cfg->ballVY);
+                            getAngle(cfg->ballVX, cfg->ballVY);
                         }
                     }
                 }
@@ -134,7 +142,7 @@ void* collisionThread(void* arg) {
             bool anyAlive = false;
             for (auto &row : cfg->grid) { // Se revisa si hay ladrillos vivos
                 for (auto &b : row) {
-                    if (b.alive) {
+                    if (b.hp > 0) {
                         anyAlive = true; 
                         break;
                     }
@@ -153,4 +161,20 @@ void* collisionThread(void* arg) {
         pthread_barrier_wait(&gFrameBarrier);
     }
     return nullptr;
+}
+
+// Asegura que el ángulo de rebote no sea ni muy horizontal ni muy vertical para mejorar la jugabilidad
+static void getAngle(float& vx, float& vy) {
+    const float MIN_X = 0.2f; // velocidad mínima en X
+    const float MIN_Y = 0.4f; // velocidad mínima en Y
+
+    // Si está demasiado vertical (vx casi 0), se aumenta la velocidad en x
+    if (std::fabs(vx) < MIN_X) {
+        vx = (vx >= 0 ? MIN_X : -MIN_X);
+    }
+
+    // Si está demasiado horizontal (vy casi 0), se aumenta la velocidad en y
+    if (std::fabs(vy) < MIN_Y) {
+        vy = (vy >= 0 ? MIN_Y : -MIN_Y);
+    }
 }

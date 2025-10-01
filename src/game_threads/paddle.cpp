@@ -1,4 +1,4 @@
-#include "game.h"
+#include "../game.h"
 #include <ncurses.h>
 #include <pthread.h>
 #include <atomic>

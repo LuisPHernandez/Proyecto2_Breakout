@@ -1,4 +1,8 @@
-#include "game.h"
+#include "../game.h"
+#include <pthread.h>    
+#include <atomic>     
+#include <ncurses.h>    
+#include <cstddef> 
 
 void* renderThread(void* arg) {
     auto* cfg = (GameConfig*)arg;

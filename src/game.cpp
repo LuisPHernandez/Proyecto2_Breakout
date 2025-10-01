@@ -10,10 +10,11 @@ DEFINICIONES DE LAS VARIABLES Y FUNCIONES GLOBALES DECLARADAS EN game.h
 
 pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t gTickCV = PTHREAD_COND_INITIALIZER;
+pthread_barrier_t gFrameBarrier;
 std::atomic<bool> gStopAll(false);
 
 // Permite a los hilos esperar al siguiente frame para sincronizarse
-static unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame) {
+unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame) {
     pthread_mutex_lock(&gMutex);
     while (!gStopAll.load() &&
            (cfg->paused || cfg->frameCounter == lastFrame || !cfg->running)) {
@@ -115,15 +116,15 @@ void runGameplay() {
     resetLevel(cfg);
 
     // 2) Lanzar hilos
-    pthread_t tTick, tInput, tPaddle, tBall, tRender;
+    pthread_t tTick, tInput, tPaddle, tBall, tCollisions, tRender;
     gStopAll.store(false);
 
-    pthread_create(&tTick, nullptr, tickThread,   &cfg);         // Coordinador de frames
-    pthread_create(&tInput, nullptr, inputThread,  &cfg);        // Teclado
-    pthread_create(&tPaddle, nullptr, paddleThread, &cfg);       // Paleta
-    pthread_create(&tBall, nullptr, ballThread,   &cfg);         // Pelota
-    pthread_create(&tCollisions, nullptr, collisionThread, &cfg) // Física de colisiones
-    pthread_create(&tRender, nullptr, renderThread, &cfg);       // Dibujo
+    pthread_create(&tTick, nullptr, tickThread, &cfg);             // Coordinador de frames
+    pthread_create(&tInput, nullptr, inputThread, &cfg);           // Teclado
+    pthread_create(&tPaddle, nullptr, paddleThread, &cfg);         // Paleta
+    pthread_create(&tBall, nullptr, ballThread, &cfg);             // Pelota
+    pthread_create(&tCollisions, nullptr, collisionsThread, &cfg); // Física de colisiones
+    pthread_create(&tRender, nullptr, renderThread, &cfg);         // Dibujo
 
     // 3) Bucle de control
     bool done = false;

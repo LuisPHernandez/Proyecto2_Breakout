@@ -1,3 +1,4 @@
+#include "game.h"
 #include <ncurses.h>
 #include <string>
 #include <vector>
@@ -61,10 +62,10 @@ int main() {
     // Bucle principal
     while (screen != Screen::EXIT) {
         switch (screen) {
-            case Screen::MAIN_MENU:    screen = showMainMenu(); break;                          // Pantalla de menú principal                        
-            case Screen::INSTRUCTIONS: showInstructions(); screen = Screen::MAIN_MENU; break;   // Pantalla de instrucciones
-            case Screen::HIGHSCORES:   showHighscores();  screen = Screen::MAIN_MENU; break;    // Pantalla de highscores
-            case Screen::GAMEPLAY:     runGameplay();     screen = Screen::MAIN_MENU; break;    // Pantalla de juego
+            case Screen::MAIN_MENU: screen = showMainMenu(); break;                            // Pantalla de menú principal                        
+            case Screen::INSTRUCTIONS: showInstructions(); screen = Screen::MAIN_MENU; break;  // Pantalla de instrucciones
+            case Screen::HIGHSCORES: showHighscores();  screen = Screen::MAIN_MENU; break;     // Pantalla de highscores
+            case Screen::GAMEPLAY: runGameplay();     screen = Screen::MAIN_MENU; break;       // Pantalla de juego
             case Screen::EXIT: break;
         }
     }
@@ -102,7 +103,7 @@ Screen showMainMenu() {
 
         // Se loopea por todos los elementos del menú
         for (int i = 0; i < (int)items.size(); ++i) {
-            std::string line = (i == selected ? ">> " : "   ") + items[i] + (i == selected ? " <<" : "");
+            std::string line = (i == selected ? ">> " : "") + items[i] + (i == selected ? " <<" : "");
             int y = top + 4 + i*2;
 
             // ncurses activa el atributo de brillo/colores invertidos para resaltar la opción seleccionada
@@ -209,76 +210,6 @@ void showHighscores() {
     int y = top + 4;
     for (const auto& s : lines) centerPrint(y++, s);
     centerPrint(bottom - 2, "[ Enter / Esc para volver ]");
-    refresh();
-
-    while (true) {
-        int ch = getch();
-        if (ch == 27 || ch == '\n' || ch == KEY_ENTER) break;
-    }
-}
-
-// Pantalla de juego
-void runGameplay() {
-    // Se limpia el buffer de dibujo de stdscr
-    clear();
-
-    // Se obtiene el tamaño de la terminal en filas y columnas
-    int rows, cols; getmaxyx(stdscr, rows, cols);
-
-    // Se calcula un rectangulo centrado para dibujar el marco de la aplicación
-    int top = rows/2 - 12, left = cols/2 - 40, bottom = rows/2 + 12, right = cols/2 + 40;
-
-    // Se dibuja el marco de juego
-    drawFrame(top, left, bottom, right, " GAMEPLAY ");
-
-    // Se calcula el área interna del marco
-    int x0 = left + 1, y0 = top + 1;
-    int x1 = right - 1, y1 = bottom - 1;
-    int w  = x1 - x0 + 1;
-    int h  = y1 - y0 + 1;
-
-    // Parámetros del grid de ladrillos
-    const int BRICK_ROWS = 4;   // Numero de filas de ladrillos
-    const int BRICK_COLS = 12;  // Numero de columnas de ladrillos
-    const int GAP_X = 1;        // Espacio entre ladrillos en x
-    const int BRICK_H = 1;      // Altura de un ladrillo
-    const int GAP_Y = 1;        // Espacio entre ladrillos en y
-
-    // Calculó del ancho base del ladrillo
-    int totalGaps = (BRICK_COLS - 1) * GAP_X;
-    int brickW = (w - totalGaps) / BRICK_COLS;                  // Ancho de un ladrillo (entero)
-    int remainder = (w - totalGaps) - (brickW * BRICK_COLS);    // Columnas sobrantes por redondeo
-
-    // Punto de partida de dibujo
-    int startY = y0 + 2;
-
-    // Dibujo del grid de ladrillos
-    for (int r = 0; r < BRICK_ROWS; ++r) {
-        int by = startY + r * (BRICK_H + GAP_Y);
-        int bx = x0;
-        for (int c = 0; c < BRICK_COLS; ++c) {
-            // Reparte 1 columna extra a los primeros 'remainder' ladrillos
-            int thisW = brickW + (c < remainder ? 1 : 0);
-            char bc = '#';
-            for (int k = 0; k < thisW; ++k) {
-                mvaddch(by, bx + k, bc);
-            }
-            bx += thisW;                 // Siguiente ladrillo empieza pegado al anterior
-            if (c < BRICK_COLS - 1) {    // Agrega gap entre ladrillos, excepto después del último
-                for (int g = 0; g < GAP_X; ++g) mvaddch(by, bx + g, ' ');
-                bx += GAP_X;
-            }
-        }
-    }
-
-    // Se imprime mensaje informativo (nivel no funcional)
-    centerPrint(top + (h/2), "Cargando nivel...");
-    centerPrint(top + (h/2) + 1, "Presiona Enter para volver al menu");
-
-    // Se imprime la paleta y la pelota
-    centerPrint(bottom - 3, "o");
-    centerPrint(bottom - 2, "======");
-
     refresh();
 
     while (true) {

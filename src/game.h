@@ -1,10 +1,7 @@
 /*
-
-game.h - Estructuras y declaraciones compartidas, la verdad no sabia quer era un .h pero es
-un archivo de cabecera (header file) que contiene declaraciones de estruturas, variables y funciones
-que son usadas en varios archivos .cpp del proyecto. Sirve para compartir definiciones comunes
-entre diferentes módulos del programa, facilitando la organización y reutilización del código.
-
+game.h - Archivo "header" que sirve para declarar funciones, clases, estructuras y constantes que 
+luego serán implementadas en archivos .cpp; de esta forma permiten separar la interfaz de la implementación, 
+reutilizar código en varios módulos y mantener el programa organizado y más fácil de mantener.
 */ 
 #ifndef GAME_H
 #define GAME_H
@@ -57,6 +54,7 @@ struct GameConfig {
 // Variables globales compartidas
 extern pthread_mutex_t gMutex;
 extern pthread_cond_t gTickCV;
+extern pthread_barrier_t gFrameBarrier;
 extern std::atomic<bool> gStopAll;
 
 // Declaraciones de hilos

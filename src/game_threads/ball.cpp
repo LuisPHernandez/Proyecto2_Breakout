@@ -1,4 +1,8 @@
-#include "game.h"
+#include "../game.h"
+#include <pthread.h>     
+#include <atomic>       
+#include <mutex>         
+#include <cstddef>
 
 void* ballThread(void* arg) {
     GameConfig* cfg = (GameConfig*)arg;
@@ -9,13 +13,13 @@ void* ballThread(void* arg) {
 
         pthread_mutex_lock(&gMutex);
         if (cfg->running && !cfg->paused && cfg->ballLaunched) {
-            // Integración “por frame” (puedes subir 2x si quieres más suave)
+            // Calculo de movimiento por frame
             cfg->ballX += cfg->ballVX;
             cfg->ballY += cfg->ballVY;
         }
         pthread_mutex_unlock(&gMutex);
 
-        // Fin de fase de actualización: sincroniza con el resto
+        // Al terminar de actualizar, sincroniza con el resto de hilos
         pthread_barrier_wait(&gFrameBarrier);
     }
     return nullptr;
