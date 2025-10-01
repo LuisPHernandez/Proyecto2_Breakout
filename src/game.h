@@ -9,6 +9,8 @@ reutilizar código en varios módulos y mantener el programa organizado y más f
 #include <vector>
 #include <pthread.h>
 #include <atomic>
+#include <ncurses.h>
+#include <string>
 
 // Estructura de un ladrillo
 struct Brick {
@@ -20,6 +22,7 @@ struct Brick {
 // Estado general del juego
 struct GameConfig {
     // Área jugable
+    WINDOW* winPlay = nullptr;   // ventana del área jugable
     int top, left, bottom, right;
     int x0, y0, x1, y1, w, h;
 
@@ -37,6 +40,8 @@ struct GameConfig {
     // Ladrillos
     int rows, cols, gapX, gapY, brickH;
     std::vector<std::vector<Brick>> grid;
+    std::vector<std::string> brickBuffer; // Buffer “pre-renderizado” de ladrillos
+    bool brickBufferReady = false;  // Indica que brickBuffer ya está construido
 
     // Estado general
     int score;
@@ -47,6 +52,7 @@ struct GameConfig {
     bool won;
     bool lost;
     bool gridDirty;
+    bool frameDrawn;
 
     // Timing
     int tick_ms;
@@ -57,15 +63,18 @@ struct GameConfig {
 // Variables globales compartidas
 extern pthread_mutex_t gMutex;
 extern pthread_cond_t gTickCV;
+extern pthread_cond_t gCtrlCV;
 extern std::atomic<bool> gStopAll;
 
 // Declaraciones de hilos
-void* tickThread(void* arg);       // Coordinador de frames
-void* inputThread(void* arg);      // Teclado
-void* paddleThread(void* arg);     // Paleta
-void* ballThread(void* arg);       // Pelota
-void* collisionsThread(void* arg); // Física de colisiones
-void* renderThread(void* arg);     // Dibujo
+void* tickThread(void* arg); // Coordinador de frames
+void* inputThread(void* arg); // Teclado
+void* paddleThread(void* arg); // Paleta
+void* ballThread(void* arg); // Pelota
+void* collisionsWallsPaddleThread(void* arg); // Colisiones con paredes y paleta
+void* collisionsBricksThread(void* arg); // Colisiones con ladrillos
+void* renderThread(void* arg); // Dibujo
+void* stateThread(void* arg); // Estado del juego
 
 // Función auxiliar
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame);

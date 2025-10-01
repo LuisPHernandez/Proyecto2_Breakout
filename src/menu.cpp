@@ -65,7 +65,12 @@ int main() {
             case Screen::MAIN_MENU: screen = showMainMenu(); break;                            // Pantalla de menú principal                        
             case Screen::INSTRUCTIONS: showInstructions(); screen = Screen::MAIN_MENU; break;  // Pantalla de instrucciones
             case Screen::HIGHSCORES: showHighscores();  screen = Screen::MAIN_MENU; break;     // Pantalla de highscores
-            case Screen::GAMEPLAY: runGameplay();     screen = Screen::MAIN_MENU; break;       // Pantalla de juego
+            case Screen::GAMEPLAY: clear();                                                    // Pantalla de juego
+                refresh();
+                runGameplay();
+                clear();
+                refresh();     
+                screen = Screen::MAIN_MENU; break;       
             case Screen::EXIT: break;
         }
     }

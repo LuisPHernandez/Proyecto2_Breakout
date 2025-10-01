@@ -1,102 +1,76 @@
 #include "../game.h"
+#include <ncurses.h>
 #include <pthread.h>
-#include <atomic>       
-#include <ncurses.h>     
-#include <unistd.h>      
-#include <cstddef>     
+#include <atomic>
+#include <unistd.h>
 #include <chrono>
 #include <cstdlib>
 
 void* inputThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
-
-    // Configurar getch() en modo no bloqueante
     nodelay(stdscr, TRUE);
-    unsigned long lastFrame = 0;
+    keypad(stdscr, TRUE);
 
     using clock = std::chrono::steady_clock;
     auto lastInput = clock::now();
-    
+
     while (!gStopAll.load()) {
-        // Esperar siguiente frame
-        lastFrame = waitNextFrame(cfg, lastFrame);
         int ch = getch();
-        
+
         if (ch != ERR) {
             pthread_mutex_lock(&gMutex);
-            
+
             switch (ch) {
-                // MOVIMIENTO IZQUIERDA
-                case KEY_LEFT:
-                case 'a':
-                case 'A':
-                    cfg->desiredDir = -1;
-                    lastInput = clock::now();
-                    break;
-                
-                // MOVIMIENTO DERECHA
-                case KEY_RIGHT:
-                case 'd':
-                case 'D':
-                    cfg->desiredDir = 1;
-                    lastInput = clock::now();
-                    break;
-                
-                // PAUSA
-                case 'p':
-                case 'P':
+                case KEY_LEFT: case 'a': case 'A':
+                    cfg->desiredDir = -1; lastInput = clock::now(); break;
+                case KEY_RIGHT: case 'd': case 'D':
+                    cfg->desiredDir = 1; lastInput = clock::now(); break;
+
+                case 'p': case 'P':
                     cfg->paused = !cfg->paused;
-                    if (!cfg->paused) {
-                        // Reanudar todos los hilos que esperan
-                        pthread_cond_broadcast(&gTickCV);
-                    }
+                    pthread_cond_broadcast(&gTickCV);
                     lastInput = clock::now();
                     break;
-                
-                // LANZAR BOLA
-                case ' ':  // Espacio
+
+                case ' ':
                     if (!cfg->ballLaunched && cfg->running) {
                         cfg->ballLaunched = true;
                         cfg->ballJustReset = false;
-                        // Velocidad inicial de la bola (para arriba)
-                        cfg->ballVX = (rand() % 2 == 0 ? -0.3f : 0.3f);;
-                        cfg->ballVY = -1.0f; // Hacia arriba
+                        cfg->ballVX = (std::rand() % 2 == 0 ? -0.5f : 0.5f);
+                        cfg->ballVY = -1.0f;
                     }
                     lastInput = clock::now();
                     break;
-                
-                // REINICIAR NIVEL
-                case 'r':
-                case 'R':
+
+                case 'r': case 'R':
                     if (cfg->running) {
                         cfg->restartRequested = true;
                         pthread_cond_broadcast(&gTickCV);
                     }
                     lastInput = clock::now();
                     break;
-                
-                // SALIR
-                case 'q':
-                case 'Q':
-                case 27:  // "ESC"
+
+                case 'q': case 'Q': case 27:
                     cfg->running = false;
                     gStopAll.store(true);
                     pthread_cond_broadcast(&gTickCV);
                     lastInput = clock::now();
                     break;
             }
-            
+
             pthread_mutex_unlock(&gMutex);
         } else {
-            // No hubo tecla, paramos la paleta
+            // No tecla; si pasaron >80ms sin input, para la paleta
             auto now = clock::now();
             if (now - lastInput > std::chrono::milliseconds(80)) {
                 pthread_mutex_lock(&gMutex);
                 cfg->desiredDir = 0;
                 pthread_mutex_unlock(&gMutex);
             }
+            // Pequeño descanso (no bloqueante)
+            usleep(5'000);
         }
     }
-    
+
     return nullptr;
 }

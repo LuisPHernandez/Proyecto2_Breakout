@@ -11,6 +11,7 @@ DEFINICIONES DE LAS VARIABLES Y FUNCIONES GLOBALES DECLARADAS EN game.h
 
 pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t gTickCV = PTHREAD_COND_INITIALIZER;
+pthread_cond_t  gCtrlCV = PTHREAD_COND_INITIALIZER;
 std::atomic<bool> gStopAll(false);
 
 // Permite a los hilos esperar al siguiente frame para sincronizarse
@@ -92,6 +93,8 @@ static void resetLevel(GameConfig& cfg) {
     cfg.ballX = cfg.paddleX + cfg.paddleW / 2.0f;
     cfg.ballY = cfg.paddleY - 1.0f;
     cfg.gridDirty = true;
+    cfg.frameDrawn = false;
+    cfg.brickBufferReady = false;
 
     buildDefaultLevel(cfg);
     cfg.frameCounter = 0;
@@ -135,40 +138,47 @@ void runGameplay() {
 
     computePlayArea(cfg);
     resetLevel(cfg);
+    if (!cfg.winPlay) {
+        int playH = cfg.h;
+        int playW = cfg.w;
+        int playY = cfg.y0;
+        int playX = cfg.x0;
+        cfg.winPlay = newwin(playH, playW, playY, playX);
+    }   
 
     // 2) Lanzar hilos
-    pthread_t tTick, tInput, tPaddle, tBall, tCollisions, tRender;
+    pthread_t tTick, tInput, tPaddle, tBall, tCollisionsWP, tCollisionsB, tRender, tState;
     gStopAll.store(false);
 
-    pthread_create(&tTick, nullptr, tickThread, &cfg);             // Coordinador de frames
-    pthread_create(&tInput, nullptr, inputThread, &cfg);           // Teclado
-    pthread_create(&tPaddle, nullptr, paddleThread, &cfg);         // Paleta
-    pthread_create(&tBall, nullptr, ballThread, &cfg);             // Pelota
-    pthread_create(&tCollisions, nullptr, collisionsThread, &cfg); // Física de colisiones
-    pthread_create(&tRender, nullptr, renderThread, &cfg);         // Dibujo
+    pthread_create(&tTick, nullptr, tickThread, &cfg); // Coordinador de frames
+    pthread_create(&tInput, nullptr, inputThread, &cfg); // Teclado
+    pthread_create(&tPaddle, nullptr, paddleThread, &cfg); // Paleta
+    pthread_create(&tBall, nullptr, ballThread, &cfg); // Pelota
+    pthread_create(&tCollisionsWP, nullptr, collisionsWallsPaddleThread, &cfg); // Colisiones pared y paleta
+    pthread_create(&tCollisionsB, nullptr, collisionsBricksThread, &cfg); // Colisiones ladrillos
+    pthread_create(&tRender, nullptr, renderThread, &cfg); // Dibujo
+    pthread_create(&tState, nullptr, stateThread, &cfg);
+
 
     // 3) Bucle de control
-    bool done = false;
-    while (!done) {
-        pthread_mutex_lock(&gMutex);
-        bool restart = cfg.restartRequested;
-        bool running = cfg.running;
-        bool won = cfg.won;
-        bool lost = cfg.lost;
-        pthread_mutex_unlock(&gMutex);
+    pthread_mutex_lock(&gMutex);
+    while (true) {
+        // Espera a que algo relevante ocurra: restart o fin de juego
+        while (!cfg.restartRequested && cfg.running && !cfg.won && !cfg.lost) {
+            pthread_cond_wait(&gCtrlCV, &gMutex);
+        }
 
-        if (restart) {
-            pthread_mutex_lock(&gMutex);
-            resetLevel(cfg);
-            pthread_mutex_unlock(&gMutex);
+        if (cfg.restartRequested) {
+            resetLevel(cfg); // reinicia todo el estado de juego
+            cfg.restartRequested = false;
+            // Señalamos a todos los hilos para que recojan el nuevo estado
+            pthread_cond_broadcast(&gTickCV);
             continue;
         }
 
-        // Si el nivel terminó o el usuario decidió salir
-        if (!running && (won || lost || !restart)) {
-            done = true;
-        }
+        break;
     }
+    pthread_mutex_unlock(&gMutex);
 
     // 4) Parar hilos y limpiar
     gStopAll.store(true);
@@ -180,8 +190,10 @@ void runGameplay() {
     pthread_join(tInput, nullptr);
     pthread_join(tPaddle, nullptr);
     pthread_join(tBall, nullptr);
-    pthread_join(tCollisions, nullptr);
+    pthread_join(tCollisionsWP, nullptr);
+    pthread_join(tCollisionsB, nullptr);
     pthread_join(tRender, nullptr);
+    pthread_join(tState, nullptr);
 
     bool won, lost;
     pthread_mutex_lock(&gMutex);
@@ -193,4 +205,5 @@ void runGameplay() {
     if (won || lost) {
         showEndScreenBlocking(won);
     }
+    if (cfg.winPlay) { delwin(cfg.winPlay); cfg.winPlay = nullptr; }
 }

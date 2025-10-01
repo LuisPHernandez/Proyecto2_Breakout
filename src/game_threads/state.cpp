@@ -2,31 +2,34 @@
 #include <pthread.h>
 #include <atomic>
 
-void* ballThread(void* arg) {
+void* stateThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
     unsigned long lastFrame = 0;
 
     while (!gStopAll.load()) {
         lastFrame = waitNextFrame(cfg, lastFrame);
-
         pthread_mutex_lock(&gMutex);
 
-        while (!gStopAll.load() && cfg->running && cfg->step != 1) {
+        while (!gStopAll.load() && cfg->running && cfg->step != 4) {
             pthread_cond_wait(&gTickCV, &gMutex);
         }
 
-        if (cfg->running && !cfg->paused && cfg->ballLaunched) {
-            cfg->ballX += cfg->ballVX;
-            cfg->ballY += cfg->ballVY;
+        if (cfg->running) {
+            // Victoria
+            bool anyAlive = false;
+            for (auto &row : cfg->grid) {
+                for (auto &b : row) { if (b.hp > 0) { anyAlive = true; break; } }
+                if (anyAlive) break;
+            }
+            if (!anyAlive) { cfg->won = true; cfg->running = false; }
         }
 
         if (cfg->running) {
-            cfg->step = 2;
+            cfg->step = 5;
             pthread_cond_broadcast(&gTickCV);
         }
 
         pthread_mutex_unlock(&gMutex);
     }
-
     return nullptr;
 }
