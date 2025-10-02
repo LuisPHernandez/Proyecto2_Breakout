@@ -99,6 +99,13 @@ void* renderThread(void* arg) {
             mvaddch(paddleScreenY, paddleScreenX + i, '=');
         }
 
+        if (local.twoPlayers && local.paddle2W > 0) {
+            for (int i = 0; i < local.paddle2W; ++i) {
+                mvaddch(local.paddle2Y, local.paddle2X + i, '=');
+            }
+        }
+
+
         // 6) Pelota
         int ballScreenY = (int)std::round(local.ballY);
         int ballScreenX = (int)std::round(local.ballX);

@@ -31,6 +31,11 @@ struct GameConfig {
     int paddleX, paddleY;
     int desiredDir;
 
+    // Paleta 2 
+    int paddle2W;
+    int paddle2X, paddle2Y;
+    int desiredDir2;
+
     // Bola
     float ballX, ballY;
     float ballVX, ballVY;
@@ -55,6 +60,7 @@ struct GameConfig {
     bool gridDirty;
     bool frameDrawn;
     int level;
+    bool twoPlayers;
 
     // Timing
     int tick_ms;
@@ -84,7 +90,7 @@ void* speedThread(void* arg); // Control de velocidad
 unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame);
 
 // Función principal del juego
-void runGameplay();
+void runGameplay(bool twoPlayers = false);
 
 // Función para obtener el score final del juego
 int getGameScore();

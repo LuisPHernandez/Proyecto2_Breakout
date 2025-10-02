@@ -91,7 +91,7 @@ std::string inputPlayerName(int finalScore) {
 Screen showMainMenu();
 void showInstructions();
 void showHighscores();
-void runGameplay();
+void runGameplay(bool twoPlayers);
 int getGameScore(); // Declaración para obtener score del juego
 void showConfig();
 
@@ -159,6 +159,7 @@ Screen showMainMenu() {
         "Iniciar partida",
         "Instrucciones",
         "Puntajes destacados",
+        "Dos jugadores (coop)",
         "Configuración",
         "Salir"
     };
@@ -195,14 +196,30 @@ Screen showMainMenu() {
             return Screen::EXIT;
         } else if (ch == '\n' || ch == KEY_ENTER) {
             switch (selected) {
-                case 0: return Screen::GAMEPLAY;
-                case 1: return Screen::INSTRUCTIONS;
-                case 2: return Screen::HIGHSCORES;
+                case 0: // Un jugador
+                    clear(); refresh();
+                    runGameplay(false);                   // <-- single
+                    clear(); refresh();
+                    return Screen::MAIN_MENU;
+
+                case 1:
+                    return Screen::INSTRUCTIONS;
+
+                case 2:
+                    return Screen::HIGHSCORES;
+
                 case 3: 
                     showConfig(); 
                     break;
-                case 4: return Screen::EXIT;
-            }
+                case 4: // Dos jugadores (coop)
+                    clear(); refresh();
+                    runGameplay(true);                    // <-- COOP activado
+                    clear(); refresh();
+                    return Screen::MAIN_MENU;
+
+                case 5:
+                    return Screen::EXIT;
+                }
         }
     }
 }

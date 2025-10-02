@@ -75,6 +75,27 @@ void* collisionsWallsPaddleThread(void* arg) {
                     normalizeAngle(cfg->ballVX, cfg->ballVY);
                 }
             }
+
+            // Colisión con paleta 2 (coop)
+            if (cfg->twoPlayers && cfg->paddle2W > 0) {
+                int ballIntY = (int)std::round(cfg->ballY);
+                int ballIntX = (int)std::round(cfg->ballX);
+
+                if (ballIntY == cfg->paddle2Y - 1 || ballIntY == cfg->paddle2Y) {
+                    if (ballIntX >= cfg->paddle2X && ballIntX < cfg->paddle2X + cfg->paddle2W) {
+                        cfg->ballY  = cfg->paddle2Y - 2;
+                        cfg->ballVY = -std::fabs(cfg->ballVY);
+
+                        // Ajustar dirección horizontal según dónde golpeó (misma fórmula que P1)
+                        float center2 = cfg->paddle2X + cfg->paddle2W / 2.0f;
+                        float half2   = std::max(1.0f, cfg->paddle2W / 2.0f);
+                        float rel2    = (cfg->ballX - center2) / half2;   // [-1..+1]
+                        cfg->ballVX   = rel2 * 0.6f;
+
+                        normalizeAngle(cfg->ballVX, cfg->ballVY);
+                    }
+                }
+            }
         }
 
         if (cfg->running) {

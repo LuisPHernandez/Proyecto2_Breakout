@@ -110,8 +110,23 @@ static void resetLevel(GameConfig& cfg) {
     cfg.won = false;
     cfg.lost = false;
 
+    // Jugador 1
     cfg.paddleW = 9;
-    cfg.paddleX = (cfg.x0 + cfg.x1) / 2;
+    cfg.paddleY = cfg.y1 - 2;                         // fila fija cerca del borde inferior
+    cfg.paddleX = cfg.x0 + (cfg.w * 1) / 4;           // a la izquierda (puedes dejar centro si prefieres)
+    cfg.desiredDir = 0;
+
+// Jugador 2 (solo si coop)
+    if (cfg.twoPlayers) {
+        cfg.paddle2W = cfg.paddleW;
+        cfg.paddle2Y = cfg.paddleY;                   // misma fila que P1
+        cfg.paddle2X = cfg.x0 + (cfg.w * 3) / 4;      // a la derecha
+        cfg.desiredDir2 = 0;
+    } else {
+        cfg.paddle2W = 0;                             // seguridad: no se dibuja nada
+        cfg.paddle2X = cfg.paddle2Y = 0;
+        cfg.desiredDir2 = 0;
+    }
 
     cfg.ballLaunched = false;
     cfg.ballJustReset = true;
@@ -157,12 +172,17 @@ static void showEndScreenBlocking(bool won) {
 FUNCIÓN PRINCIPAL Y PUNTO DE ENTRADA DESDE EL MENÚ
 */
 
-void runGameplay() {
+void runGameplay(bool twoPlayers) {
     std::srand((unsigned)std::time(nullptr));
 
     // 1) Config inicial
     GameConfig cfg{};
+<<<<<<< HEAD
     cfg.tick_ms = g_tick_ms;
+=======
+    cfg.tick_ms = 60000;
+    cfg.twoPlayers = twoPlayers;
+>>>>>>> cbf29e221a6e563f0e00722a8913a0f1c3652a8e
     cfg.rows = 4;
     cfg.cols = 10;
     cfg.gapX = 1;

@@ -1,2 +1,8 @@
 bin/
-.txt
+.txtbreakout
+*.o
+build/
+breakout
+*.o
+build/
+
