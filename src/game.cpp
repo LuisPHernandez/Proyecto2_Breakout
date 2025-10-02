@@ -110,16 +110,23 @@ static void resetLevel(GameConfig& cfg) {
     cfg.won = false;
     cfg.lost = false;
 
+    // Jugador 1
     cfg.paddleW = 9;
-    cfg.paddleX = (cfg.x0 + cfg.x1) / 2;
+    cfg.paddleY = cfg.y1 - 2;                         // fila fija cerca del borde inferior
+    cfg.paddleX = cfg.x0 + (cfg.w * 1) / 4;           // a la izquierda (puedes dejar centro si prefieres)
+    cfg.desiredDir = 0;
 
-    cfg.paddle2W = cfg.paddleW;
-    cfg.paddle2Y = cfg.paddleY;
-    cfg.paddle2X = cfg.x0 + (cfg.w * 3) / 4;
-    cfg.paddleX  = cfg.x0 + (cfg.w * 1) / 4;
-
-    cfg.desiredDir  = 0;
-    cfg.desiredDir2 = 0;
+// Jugador 2 (solo si coop)
+    if (cfg.twoPlayers) {
+        cfg.paddle2W = cfg.paddleW;
+        cfg.paddle2Y = cfg.paddleY;                   // misma fila que P1
+        cfg.paddle2X = cfg.x0 + (cfg.w * 3) / 4;      // a la derecha
+        cfg.desiredDir2 = 0;
+    } else {
+        cfg.paddle2W = 0;                             // seguridad: no se dibuja nada
+        cfg.paddle2X = cfg.paddle2Y = 0;
+        cfg.desiredDir2 = 0;
+    }
 
     cfg.ballLaunched = false;
     cfg.ballJustReset = true;

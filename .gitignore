@@ -2,3 +2,7 @@ bin/
 .txtbreakout
 *.o
 build/
+breakout
+*.o
+build/
+

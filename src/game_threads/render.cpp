@@ -99,11 +99,9 @@ void* renderThread(void* arg) {
             mvaddch(paddleScreenY, paddleScreenX + i, '=');
         }
 
-        if (local.twoPlayers) {
+        if (local.twoPlayers && local.paddle2W > 0) {
             for (int i = 0; i < local.paddle2W; ++i) {
-                mvwaddch(local.winPlay,
-                 local.paddle2Y - local.y0 - 1,
-                 local.paddle2X - local.x0 - 1 + i, '=');
+                mvaddch(local.paddle2Y, local.paddle2X + i, '=');
             }
         }
 
