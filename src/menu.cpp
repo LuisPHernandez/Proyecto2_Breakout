@@ -163,7 +163,7 @@ Screen showMainMenu() {
     int selected = 0;
 
     while (true) {
-        clear();
+        erase();
         int rows, cols; 
         getmaxyx(stdscr, rows, cols);
 
