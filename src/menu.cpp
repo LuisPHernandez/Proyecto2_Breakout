@@ -170,7 +170,7 @@ Screen showMainMenu() {
         int rows, cols; 
         getmaxyx(stdscr, rows, cols);
 
-        int top = rows/2 - 8, left = cols/2 - 30, bottom = rows/2 + 8, right = cols/2 + 30;
+        int top = rows/2 - 10, left = cols/2 - 30, bottom = rows/2 + 10, right = cols/2 + 30;
 
         drawFrame(top, left, bottom, right, " BREAKOUT ");
         centerPrint(top + 2, "MENU PRINCIPAL");
@@ -198,7 +198,7 @@ Screen showMainMenu() {
             switch (selected) {
                 case 0: // Un jugador
                     clear(); refresh();
-                    runGameplay(false);                   // <-- single
+                    runGameplay(false);                  
                     clear(); refresh();
                     return Screen::MAIN_MENU;
 
@@ -207,16 +207,14 @@ Screen showMainMenu() {
 
                 case 2:
                     return Screen::HIGHSCORES;
-
-                case 3: 
-                    showConfig(); 
-                    break;
-                case 4: // Dos jugadores (coop)
+                case 3: // Dos jugadores (coop)
                     clear(); refresh();
-                    runGameplay(true);                    // <-- COOP activado
+                    runGameplay(true);                  
                     clear(); refresh();
                     return Screen::MAIN_MENU;
-
+                case 4: 
+                    showConfig(); 
+                    break;
                 case 5:
                     return Screen::EXIT;
                 }

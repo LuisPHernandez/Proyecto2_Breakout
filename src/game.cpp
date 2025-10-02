@@ -177,12 +177,8 @@ void runGameplay(bool twoPlayers) {
 
     // 1) Config inicial
     GameConfig cfg{};
-<<<<<<< HEAD
     cfg.tick_ms = g_tick_ms;
-=======
-    cfg.tick_ms = 60000;
     cfg.twoPlayers = twoPlayers;
->>>>>>> cbf29e221a6e563f0e00722a8913a0f1c3652a8e
     cfg.rows = 4;
     cfg.cols = 10;
     cfg.gapX = 1;
