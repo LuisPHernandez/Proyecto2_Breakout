@@ -67,6 +67,7 @@ extern pthread_mutex_t gMutex;
 extern pthread_cond_t gTickCV;
 extern pthread_cond_t gCtrlCV;
 extern std::atomic<bool> gStopAll;
+extern int g_tick_ms;
 
 // Declaraciones de hilos
 void* tickThread(void* arg); // Coordinador de frames

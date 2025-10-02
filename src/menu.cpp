@@ -93,6 +93,7 @@ void showInstructions();
 void showHighscores();
 void runGameplay();
 int getGameScore(); // Declaración para obtener score del juego
+void showConfig();
 
 // Programa principal
 int main() {
@@ -158,6 +159,7 @@ Screen showMainMenu() {
         "Iniciar partida",
         "Instrucciones",
         "Puntajes destacados",
+        "Configuración",
         "Salir"
     };
     int selected = 0;
@@ -196,7 +198,10 @@ Screen showMainMenu() {
                 case 0: return Screen::GAMEPLAY;
                 case 1: return Screen::INSTRUCTIONS;
                 case 2: return Screen::HIGHSCORES;
-                case 3: return Screen::EXIT;
+                case 3: 
+                    showConfig(); 
+                    break;
+                case 4: return Screen::EXIT;
             }
         }
     }
@@ -275,5 +280,57 @@ void showHighscores() {
     while (true) {
         int ch = getch();
         if (ch == 27 || ch == '\n' || ch == KEY_ENTER) break;
+    }
+}
+
+// Variable global para la velocidad seleccionada
+int g_tick_ms = 60000; // valor por defecto
+
+void showConfig() {
+    std::vector<std::string> options = {
+        "Velocidad 1 (lenta)",   // tick_ms = 60000
+        "Velocidad 2 (media)",   // tick_ms = 50000
+        "Velocidad 3 (rápida)"   // tick_ms = 40000
+    };
+    int selected = 0;
+
+    while (true) {
+        erase();
+        int rows, cols;
+        getmaxyx(stdscr, rows, cols);
+
+        int top = rows/2 - 6, left = cols/2 - 25, bottom = rows/2 + 6, right = cols/2 + 25;
+        drawFrame(top, left, bottom, right, " CONFIGURACION ");
+
+        centerPrint(top + 2, "Selecciona velocidad de la pelota:");
+
+        for (int i = 0; i < (int)options.size(); ++i) {
+            std::string line = (i == selected ? ">> " : "") + options[i] + (i == selected ? " <<" : "");
+            int y = top + 4 + i*2;
+
+            if (i == selected) attron(A_REVERSE);
+            centerPrint(y, line);
+            if (i == selected) attroff(A_REVERSE);
+        }
+
+        centerPrint(bottom - 2, "[ Enter para seleccionar | Esc para volver ]");
+
+        refresh();
+
+        int ch = getch();
+        if (ch == KEY_UP || ch == 'w' || ch == 'W') {
+            selected = (selected - 1 + (int)options.size()) % (int)options.size();
+        } else if (ch == KEY_DOWN || ch == 's' || ch == 'S') {
+            selected = (selected + 1) % (int)options.size();
+        } else if (ch == 27) {
+            break; // volver al menú
+        } else if (ch == '\n' || ch == KEY_ENTER) {
+            switch (selected) {
+                case 0: g_tick_ms = 65000; break;
+                case 1: g_tick_ms = 55000; break;
+                case 2: g_tick_ms = 45000; break;
+            }
+            break;
+        }
     }
 }
