@@ -91,7 +91,7 @@ std::string inputPlayerName(int finalScore) {
 Screen showMainMenu();
 void showInstructions();
 void showHighscores();
-void runGameplay(ool twoPlayers);
+void runGameplay(bool twoPlayers);
 int getGameScore(); // Declaración para obtener score del juego
 
 // Programa principal
