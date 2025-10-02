@@ -8,7 +8,7 @@ void* tickThread(void* arg) {
     auto* cfg = (GameConfig*)arg;
 
     while (!gStopAll.load()) {
-        usleep(cfg->tick_ms * 1000);
+        usleep(cfg->tick_ms);
 
         pthread_mutex_lock(&gMutex);
 

@@ -75,7 +75,7 @@ void* inputThread(void* arg) {
                 cfg->desiredDir = 0;
                 pthread_mutex_unlock(&gMutex);
             }
-            usleep(3000); // 3ms
+            usleep(50000); // 3ms
         }
     }
 

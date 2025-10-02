@@ -130,7 +130,7 @@ void runGameplay() {
 
     // 1) Config inicial
     GameConfig cfg{};
-    cfg.tick_ms = 12; // ~83 FPS - balance entre fluidez y control
+    cfg.tick_ms = 60000;
     cfg.rows = 4;
     cfg.cols = 10;
     cfg.gapX = 1;
