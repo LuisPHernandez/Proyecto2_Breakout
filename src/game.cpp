@@ -33,8 +33,21 @@ unsigned long waitNextFrame(GameConfig* cfg, unsigned long lastFrame) {
 HELPERS LOCALES DE ESTE MÓDULO
 */
 
-// Construye el nivel default del juego
-static void buildDefaultLevel(GameConfig& cfg) {
+// Construye el nivel 1 del juego
+static void buildLevel1(GameConfig& cfg) {
+    cfg.grid.assign(cfg.rows, std::vector<Brick>(cfg.cols));
+
+    for (int r = 0; r < cfg.rows; ++r) {
+        for (int c = 0; c < cfg.cols; ++c) {
+            Brick b{};
+            b.hp = 1; b.ch = '#'; b.points = 10;
+            cfg.grid[r][c] = b;
+        }
+    }
+}
+
+// Construye el nivel 2 del juego
+static void buildLevel2(GameConfig& cfg) {
     cfg.grid.assign(cfg.rows, std::vector<Brick>(cfg.cols));
 
     for (int r = 0; r < cfg.rows; ++r) {
@@ -49,6 +62,19 @@ static void buildDefaultLevel(GameConfig& cfg) {
             else {
                 b.hp = 1; b.ch = '#'; b.points = 10;
             }
+            cfg.grid[r][c] = b;
+        }
+    }
+}
+
+// Construye el nivel 3 del juego
+static void buildLevel3(GameConfig& cfg) {
+    cfg.grid.assign(cfg.rows, std::vector<Brick>(cfg.cols));
+
+    for (int r = 0; r < cfg.rows; ++r) {
+        for (int c = 0; c < cfg.cols; ++c) {
+            Brick b{};
+            b.hp = 3; b.ch = '@'; b.points = 50;
             cfg.grid[r][c] = b;
         }
     }
@@ -98,7 +124,13 @@ static void resetLevel(GameConfig& cfg) {
     cfg.frameDrawn = false;
     cfg.brickBufferReady = false;
 
-    buildDefaultLevel(cfg);
+    if (cfg.level == 1) {
+        buildLevel1(cfg);
+    } else if (cfg.level == 2) {
+        buildLevel2(cfg);
+    } else {
+        buildLevel3(cfg);
+    }
     cfg.frameCounter = 0;
     cfg.step = 0;
 }
@@ -137,6 +169,7 @@ void runGameplay() {
     cfg.gapY = 1;
     cfg.brickH = 1;
     cfg.desiredDir = 0;
+    cfg.level = 1;
 
     computePlayArea(cfg);
     resetLevel(cfg);

@@ -58,8 +58,8 @@ void* renderThread(void* arg) {
         }
 
         // 3) HUD dinámico (score/vidas/paused)
-        mvprintw(local.top + 1, local.left + 2, " Score: %d | Lives: %d | %s ",
-                 local.score, local.lives, local.paused ? "PAUSED" : "PLAYING");
+        mvprintw(local.top + 1, local.left + 2, " Score: %d | Lives: %d | Level: %d | %s ",
+                 local.score, local.lives, local.level, local.paused ? "PAUSED" : "PLAYING");
 
         // 4) Dibujar ladrillos
         int totalGaps = (local.cols - 1) * local.gapX;

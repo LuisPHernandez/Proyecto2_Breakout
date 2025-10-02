@@ -28,10 +28,22 @@ void* stateThread(void* arg) {
             }
             
             if (!anyAlive) { 
-                cfg->won = true; 
-                cfg->running = false;
-                // IMPORTANTE: Notificar al hilo de control
-                pthread_cond_signal(&gCtrlCV);
+                if (cfg->level = 1) {
+                    cfg->restartRequested = true;
+                    cfg->level = 2;
+                    pthread_cond_signal(&gCtrlCV);
+                }
+                else if(cfg->level = 2) {
+                    cfg->restartRequested = true;
+                    cfg->level = 3;
+                    pthread_cond_signal(&gCtrlCV);
+                }
+                else {
+                    cfg->won = true; 
+                    cfg->running = false;
+                    // Notificar al hilo de control
+                    pthread_cond_signal(&gCtrlCV);
+                }
             }
             
             // Si se perdió (detectado en collisionsWallsPaddle)

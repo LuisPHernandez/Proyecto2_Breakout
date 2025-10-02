@@ -54,6 +54,7 @@ struct GameConfig {
     bool lost;
     bool gridDirty;
     bool frameDrawn;
+    int level;
 
     // Timing
     int tick_ms;
